@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block titulo %}Reporte de Asistencia{% endblock %}
+{% block page_title %}Reporte de Asistencia{% endblock %}
+
+{% block contenido %}
+<div class="mb-4">
+    <h3 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Reporte de Asistencia</h3>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-7">
+                <label class="form-label fw-semibold">Selecciona la asignación</label>
+                <select name="asignacion" class="form-select">
+                    <option value="">Elige una asignación...</option>
+                    {% for a in asignaciones %}
+                    {% if asignacion_pk_sel == a.pk|stringformat:"i" %}
+                    <option value="{{ a.pk }}" selected>
+                        {{ a.materia }} — {{ a.curso }} ({{ a.año_escolar }})
+                    </option>
+                    {% else %}
+                    <option value="{{ a.pk }}">
+                        {{ a.materia }} — {{ a.curso }} ({{ a.año_escolar }})
+                    </option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-bar-chart me-1"></i>Ver reporte
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if asignacion %}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white fw-semibold">
+        Resultado — {{ asignacion.materia }} | {{ asignacion.curso }}
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Estudiante</th>
+                    <th class="text-center">Total clases</th>
+                    <th class="text-center">Presentes</th>
+                    <th class="text-center">Ausentes</th>
+                    <th class="text-center">Asistencia</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reporte %}
+                <tr>
+                    <td><strong>{{ r.estudiante.usuario.get_full_name }}</strong></td>
+                    <td class="text-center">{{ r.total }}</td>
+                    <td class="text-center text-success fw-semibold">{{ r.presentes }}</td>
+                    <td class="text-center text-danger fw-semibold">{{ r.ausentes }}</td>
+                    <td class="text-center" style="min-width:160px">
+                        <div class="d-flex align-items-center gap-2">
+
+                            <!-- Barra de progreso sin % en style -->
+                            <div class="progress flex-grow-1" style="height:8px">
+                                {% if r.porcentaje >= 80 %}
+                                <div class="progress-bar bg-success" role="progressbar" data-ancho="{{ r.porcentaje }}">
+                                </div>
+                                {% elif r.porcentaje >= 60 %}
+                                <div class="progress-bar bg-warning" role="progressbar" data-ancho="{{ r.porcentaje }}">
+                                </div>
+                                {% else %}
+                                <div class="progress-bar bg-danger" role="progressbar" data-ancho="{{ r.porcentaje }}">
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <span class="small fw-semibold" style="min-width:40px">
+                                {{ r.porcentaje }}%
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        {% if r.total == 0 %}
+                        <span class="badge bg-secondary">Sin datos</span>
+                        {% elif r.porcentaje >= 80 %}
+                        <span class="badge bg-success">Regular</span>
+                        {% elif r.porcentaje >= 60 %}
+                        <span class="badge bg-warning text-dark">En riesgo</span>
+                        {% else %}
+                        <span class="badge bg-danger">Crítico</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        No hay datos de asistencia para esta asignación.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Aplicar el ancho de la barra desde data-ancho en vez de style
+    document.querySelectorAll('.progress-bar[data-ancho]').forEach(function (bar) {
+        bar.style.width = bar.getAttribute('data-ancho') + '%';
+    });
+</script>
+{% endblock %}

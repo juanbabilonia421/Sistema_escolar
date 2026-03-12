@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Crear cuenta — Sistema Escolar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a237e, #283593);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-registro {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 480px;
+        }
+        .card-header-registro {
+            background: #1a237e;
+            color: white;
+            border-radius: 16px 16px 0 0 !important;
+            text-align: center;
+            padding: 30px;
+        }
+        .btn-tipo {
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .btn-tipo:hover {
+            border-color: #1a237e;
+            background: #f0f2ff;
+            color: #1a237e;
+        }
+    </style>
+</head>
+<body>
+<div class="card card-registro">
+    <div class="card-header-registro">
+        <h4 class="mb-1"><i class="bi bi-person-plus me-2"></i>Crear cuenta</h4>
+        <p class="mb-0 opacity-75 small">¿Qué tipo de cuenta deseas crear?</p>
+    </div>
+    <div class="card-body p-4">
+
+        <div class="row g-3 mb-4">
+            <div class="col-6">
+                <a href="{% url 'usuarios:registro_estudiante' %}" class="btn-tipo">
+                    <i class="bi bi-mortarboard fs-2 d-block mb-2 text-primary"></i>
+                    <strong>Estudiante</strong>
+                    <p class="text-muted small mb-0 mt-1">Accede a tus notas y actividades</p>
+                </a>
+            </div>
+            <div class="col-6">
+                <a href="{% url 'usuarios:registro_acudiente' %}" class="btn-tipo">
+                    <i class="bi bi-people fs-2 d-block mb-2 text-warning"></i>
+                    <strong>Acudiente</strong>
+                    <p class="text-muted small mb-0 mt-1">Consulta cotizaciones y más</p>
+                </a>
+            </div>
+        </div>
+
+        <div class="alert alert-info small mb-3">
+            <i class="bi bi-info-circle me-1"></i>
+            Tu cuenta quedará <strong>pendiente de activación</strong> por el coordinador antes de poder ingresar.
+        </div>
+
+        <div class="text-center">
+            <a href="{% url 'usuarios:login' %}" class="text-muted small">
+                ¿Ya tienes cuenta? Inicia sesión
+            </a>
+        </div>
+
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

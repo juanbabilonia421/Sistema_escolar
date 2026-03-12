@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ titulo }}{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-semibold">{{ titulo }}</div>
+            <div class="card-body">
+
+                <div class="alert alert-info small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Después de crear el usuario, podrás completar
+                    su perfil según el rol seleccionado.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        {% for field in form %}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'usuarios:lista_usuarios' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            Crear usuario <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block titulo %}Materias{% endblock %}
+{% block page_title %}Materias{% endblock %}
+
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0"><i class="bi bi-book me-2"></i>Materias</h3>
+    {% if user.es_coordinador %}
+    <a href="{% url 'academico:crear_materia' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Nueva materia
+    </a>
+    {% endif %}
+</div>
+
+<!-- BARRA DE FILTROS -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+
+            <div class="col-md-8">
+                <label class="form-label fw-semibold small text-muted">
+                    <i class="bi bi-search me-1"></i>Buscar
+                </label>
+                <input type="text" name="q" value="{{ busqueda }}" class="form-control"
+                    placeholder="Nombre o descripción de la materia...">
+            </div>
+
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i>Filtrar
+                </button>
+                <a href="{% url 'academico:lista_materias' %}" class="btn btn-outline-secondary" title="Limpiar">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+{% if busqueda %}
+<p class="text-muted small mb-2">
+    <i class="bi bi-info-circle me-1"></i>
+    {{ materias.count }} resultado{{ materias.count|pluralize }} encontrado{{ materias.count|pluralize }}
+    para "<strong>{{ busqueda }}</strong>"
+</p>
+{% endif %}
+
+<!-- TABLA -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Asignaciones</th>
+                    {% if user.es_coordinador %}<th>Acciones</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for materia in materias %}
+                <tr>
+                    <td><strong>{{ materia.nombre }}</strong></td>
+                    <td class="text-muted">{{ materia.descripcion|default:"—"|truncatechars:60 }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark border">
+                            {{ materia.asignaciones.count }} asignación{{ materia.asignaciones.count|pluralize:"es" }}
+                        </span>
+                    </td>
+                    {% if user.es_coordinador %}
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'academico:editar_materia' materia.pk %}"
+                               class="btn btn-sm btn-outline-warning" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="post" action="{% url 'academico:eliminar_materia' materia.pk %}"
+                                style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                    onclick="return confirm('¿Eliminar la materia {{ materia.nombre }}?')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">
+                        <i class="bi bi-search me-2"></i>
+                        No se encontraron materias con los filtros aplicados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

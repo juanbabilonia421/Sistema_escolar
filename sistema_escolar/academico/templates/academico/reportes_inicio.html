@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block titulo %}Reportes{% endblock %}
+{% block page_title %}Reportes y Estadísticas{% endblock %}
+
+{% block contenido %}
+<div class="mb-4">
+    <h3 class="mb-0"><i class="bi bi-graph-up me-2"></i>Reportes y Estadísticas</h3>
+</div>
+
+<!-- Tarjetas de resumen -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-2">🎒</div>
+            <div class="fw-bold fs-4 text-primary">{{ total_estudiantes }}</div>
+            <div class="text-muted small">Estudiantes</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-2">👩‍🏫</div>
+            <div class="fw-bold fs-4 text-primary">{{ total_profesores }}</div>
+            <div class="text-muted small">Profesores</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-2">📚</div>
+            <div class="fw-bold fs-4 text-primary">{{ total_cursos }}</div>
+            <div class="text-muted small">Cursos</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-2">📝</div>
+            <div class="fw-bold fs-4 text-primary">{{ total_notas }}</div>
+            <div class="text-muted small">Notas</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-2">📋</div>
+            <div class="fw-bold fs-4 text-primary">{{ total_asistencias }}</div>
+            <div class="text-muted small">Asistencias</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-2">📌</div>
+            <div class="fw-bold fs-4 text-primary">{{ total_actividades }}</div>
+            <div class="text-muted small">Actividades</div>
+        </div>
+    </div>
+</div>
+
+<!-- Promedio general -->
+{% if promedio_general %}
+<div class="alert border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #1a237e, #283593); color: white;">
+    <div class="d-flex align-items-center gap-3">
+        <span class="fs-1">🏆</span>
+        <div>
+            <div class="fw-bold fs-5">Promedio general del sistema</div>
+            <div class="fs-2 fw-bold">{{ promedio_general }}</div>
+            <div class="opacity-75 small">Basado en todas las notas registradas</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Accesos rápidos a reportes -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center p-4">
+                <div class="fs-1 mb-3">📊</div>
+                <h5>Reporte de Notas</h5>
+                <p class="text-muted small">
+                    Promedio por estudiante, filtrado por curso, materia y periodo.
+                </p>
+                <a href="{% url 'academico:reporte_notas' %}" class="btn btn-primary w-100">
+                    Ver reporte
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center p-4">
+                <div class="fs-1 mb-3">📅</div>
+                <h5>Reporte de Asistencia</h5>
+                <p class="text-muted small">
+                    Porcentaje de asistencia por estudiante en cada asignación.
+                </p>
+                <a href="{% url 'academico:reporte_asistencia' %}" class="btn btn-primary w-100">
+                    Ver reporte
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center p-4">
+                <div class="fs-1 mb-3">🏫</div>
+                <h5>Reporte por Curso</h5>
+                <p class="text-muted small">
+                    Promedio general y asistencia de cada curso registrado.
+                </p>
+                <div class="d-grid gap-2">
+                    {% for item in cursos_data %}
+                    <a href="{% url 'academico:reporte_curso' item.curso.pk %}" class="btn btn-outline-primary btn-sm">
+                        {{ item.curso.nombre }}
+                        {% if item.promedio %}
+                        — Prom: {{ item.promedio }}
+                        {% endif %}
+                    </a>
+                    {% empty %}
+                    <p class="text-muted small">No hay cursos registrados.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

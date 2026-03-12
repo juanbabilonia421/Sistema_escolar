@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block titulo %}Reporte {{ curso.nombre }}{% endblock %}
+{% block page_title %}Reporte de curso{% endblock %}
+
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">
+        <i class="bi bi-grid-3x3-gap me-2"></i>{{ curso.nombre }} — {{ curso.año_escolar }}
+    </h3>
+    <a href="{% url 'academico:reportes_inicio' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Volver
+    </a>
+</div>
+
+<div class="row g-4">
+
+    <!-- Promedio por materia -->
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-book me-2"></i>Promedio por materia
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Materia</th>
+                            <th>Profesor</th>
+                            <th class="text-center">Promedio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in materias_data %}
+                        <tr>
+                            <td>{{ m.asignacion.materia.nombre }}</td>
+                            <td class="small text-muted">
+                                {{ m.asignacion.profesor.usuario.get_full_name }}
+                            </td>
+                            <td class="text-center">
+                                {% if m.promedio %}
+                                <span class="badge
+                    {% if m.promedio >= 3.0 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ m.promedio }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-muted text-center py-3">
+                                Sin asignaciones.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promedio por estudiante -->
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-people me-2"></i>
+                Estudiantes ({{ estudiantes_data|length }})
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Estudiante</th>
+                            <th class="text-center">Promedio</th>
+                            <th class="text-center">Asistencia</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for e in estudiantes_data %}
+                        <tr>
+                            <td class="text-muted">{{ forloop.counter }}</td>
+                            <td><strong>{{ e.estudiante.usuario.get_full_name }}</strong></td>
+                            <td class="text-center">
+                                {% if e.promedio %}
+                                <span class="fw-bold
+                    {% if e.promedio >= 3.0 %}text-success{% else %}text-danger{% endif %}">
+                                    {{ e.promedio }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if e.pct_asistencia >= 80 %}
+                                <span class="badge bg-success">{{ e.pct_asistencia }}%</span>
+                                {% elif e.pct_asistencia >= 60 %}
+                                <span class="badge bg-warning text-dark">{{ e.pct_asistencia }}%</span>
+                                {% else %}
+                                <span class="badge bg-danger">{{ e.pct_asistencia }}%</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'academico:reporte_estudiante' e.estudiante.pk %}"
+                                    class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                No hay estudiantes en este curso.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

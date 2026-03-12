@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% block titulo %}Usuarios{% endblock %}
+{% block page_title %}Usuarios del sistema{% endblock %}
+
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0"><i class="bi bi-people me-2"></i>Usuarios del sistema</h3>
+    <a href="{% url 'usuarios:crear_usuario' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Nuevo usuario
+    </a>
+</div>
+
+<!-- BARRA DE FILTROS -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+
+            <!-- Búsqueda por texto -->
+            <div class="col-md-5">
+                <label class="form-label fw-semibold small text-muted">
+                    <i class="bi bi-search me-1"></i>Buscar
+                </label>
+                <input type="text"
+                       name="q"
+                       value="{{ busqueda }}"
+                       class="form-control"
+                       placeholder="Nombre, usuario o email...">
+            </div>
+
+            <!-- Filtro por rol -->
+            <div class="col-md-3">
+                <label class="form-label fw-semibold small text-muted">
+                    <i class="bi bi-person-badge me-1"></i>Rol
+                </label>
+                <select name="rol" class="form-select">
+                    <option value="">Todos los roles</option>
+                    {% for value, label in roles %}
+                    <option value="{{ value }}" {% if rol == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Filtro por estado -->
+            <div class="col-md-2">
+                <label class="form-label fw-semibold small text-muted">
+                    <i class="bi bi-toggle-on me-1"></i>Estado
+                </label>
+                <select name="estado" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="activo"   {% if estado == 'activo'   %}selected{% endif %}>Activo</option>
+                    <option value="inactivo" {% if estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+                </select>
+            </div>
+
+            <!-- Botones -->
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i>Filtrar
+                </button>
+                <a href="{% url 'usuarios:lista_usuarios' %}" class="btn btn-outline-secondary" title="Limpiar filtros">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- RESULTADOS -->
+{% if busqueda or rol or estado %}
+<p class="text-muted small mb-2">
+    <i class="bi bi-info-circle me-1"></i>
+    {{ usuarios.count }} resultado{{ usuarios.count|pluralize }} encontrado{{ usuarios.count|pluralize }}
+    {% if busqueda %} para "<strong>{{ busqueda }}</strong>"{% endif %}
+</p>
+{% endif %}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre completo</th>
+                    <th>Usuario</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td><strong>{{ u.get_full_name }}</strong></td>
+                    <td><code>{{ u.username }}</code></td>
+                    <td>{{ u.email|default:"—" }}</td>
+                    <td>
+                        {% if u.rol == 'coordinador' %}
+                            <span class="badge bg-danger">Coordinador</span>
+                        {% elif u.rol == 'profesor' %}
+                            <span class="badge bg-primary">Profesor</span>
+                        {% elif u.rol == 'estudiante' %}
+                            <span class="badge bg-success">Estudiante</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Acudiente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.is_active %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+
+                            <!-- Ver -->
+                            <a href="{% url 'usuarios:ver_usuario' u.pk %}"
+                               class="btn btn-sm btn-outline-info"
+                               title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            <!-- Editar -->
+                            {% if not u.is_superuser %}
+                            <a href="{% url 'usuarios:editar_usuario' u.pk %}"
+                               class="btn btn-sm btn-outline-warning"
+                               title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% endif %}
+
+                            <!-- Activar / Desactivar -->
+                            {% if not u.is_superuser and u != user %}
+                            <form method="post"
+                                  action="{% url 'usuarios:toggle_usuario' u.pk %}"
+                                  style="display:inline;">
+                                {% csrf_token %}
+                                {% if u.is_active %}
+                                    <button type="submit"
+                                            class="btn btn-sm btn-outline-danger"
+                                            title="Desactivar"
+                                            onclick="return confirm('¿Desactivar a {{ u.get_full_name }}?')">
+                                        <i class="bi bi-person-x"></i>
+                                    </button>
+                                {% else %}
+                                    <button type="submit"
+                                            class="btn btn-sm btn-outline-success"
+                                            title="Activar"
+                                            onclick="return confirm('¿Activar a {{ u.get_full_name }}?')">
+                                        <i class="bi bi-person-check"></i>
+                                    </button>
+                                {% endif %}
+                            </form>
+                            {% endif %}
+
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        <i class="bi bi-search me-2"></i>
+                        No se encontraron usuarios con los filtros aplicados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

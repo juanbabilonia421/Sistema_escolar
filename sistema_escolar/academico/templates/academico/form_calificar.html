@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block page_title %}{{ titulo }}{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-pencil-square me-2"></i>{{ titulo }}
+            </div>
+            <div class="card-body">
+
+                <div class="alert alert-light border mb-4">
+                    <p class="mb-1">
+                        <strong>Estudiante:</strong>
+                        {{ entrega.estudiante.usuario.get_full_name }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Actividad:</strong> {{ entrega.actividad.titulo }}
+                    </p>
+                    <p class="mb-0">
+                        <strong>Puntaje máximo:</strong>
+                        {{ entrega.actividad.puntaje_maximo }}
+                    </p>
+                </div>
+
+                {% if entrega.comentario %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Comentario del estudiante</label>
+                    <p class="text-muted border rounded p-2">{{ entrega.comentario }}</p>
+                </div>
+                {% endif %}
+
+                {% if entrega.archivo %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Archivo entregado</label><br>
+                    <a href="{{ entrega.archivo.url }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-download me-1"></i>Descargar archivo
+                    </a>
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                        <div class="text-danger small mt-1">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'academico:detalle_actividad' entrega.actividad.pk %}"
+                            class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Guardar calificación
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

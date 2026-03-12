@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block titulo %}Cursos{% endblock %}
+{% block page_title %}Cursos{% endblock %}
+
+{% block contenido %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0"><i class="bi bi-grid-3x3-gap me-2"></i>Cursos</h3>
+    {% if user.es_coordinador %}
+    <a href="{% url 'academico:crear_curso' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Nuevo curso
+    </a>
+    {% endif %}
+</div>
+
+<!-- BARRA DE FILTROS -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+
+            <div class="col-md-4">
+                <label class="form-label fw-semibold small text-muted">
+                    <i class="bi bi-search me-1"></i>Buscar
+                </label>
+                <input type="text" name="q" value="{{ busqueda }}" class="form-control"
+                    placeholder="Nombre del curso...">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-semibold small text-muted">
+                    <i class="bi bi-calendar me-1"></i>Año escolar
+                </label>
+                <select name="año_escolar" class="form-select">
+                    <option value="">Todos los años</option>
+                    {% for año in años_disponibles %}
+                    <option value="{{ año }}" {% if año == año_escolar_int %}selected{% endif %}>
+                        {{ año }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-semibold small text-muted">
+                    <i class="bi bi-layers me-1"></i>Nivel
+                </label>
+                <select name="nivel" class="form-select">
+                    <option value="">Todos los niveles</option>
+                    {% for value, label in niveles %}
+                    <option value="{{ value }}" {% if nivel == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i>Filtrar
+                </button>
+                <a href="{% url 'academico:lista_cursos' %}" class="btn btn-outline-secondary" title="Limpiar">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+{% if busqueda or año_escolar or nivel %}
+<p class="text-muted small mb-2">
+    <i class="bi bi-info-circle me-1"></i>
+    {{ cursos.count }} resultado{{ cursos.count|pluralize }} encontrado{{ cursos.count|pluralize }}
+    {% if busqueda %} para "<strong>{{ busqueda }}</strong>"{% endif %}
+</p>
+{% endif %}
+
+<!-- TABLA -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Nivel</th>
+                    <th>Año escolar</th>
+                    <th>Estudiantes</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for curso in cursos %}
+                <tr>
+                    <td><strong>{{ curso.nombre }}</strong></td>
+                    <td>{{ curso.get_nivel_display|default:"—" }}</td>
+                    <td>{{ curso.año_escolar }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark border">
+                            {{ curso.estudiantes.count }} estudiante{{ curso.estudiantes.count|pluralize }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'academico:detalle_curso' curso.pk %}"
+                               class="btn btn-sm btn-outline-info" title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if user.es_coordinador %}
+                            <a href="{% url 'academico:editar_curso' curso.pk %}"
+                               class="btn btn-sm btn-outline-warning" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form method="post" action="{% url 'academico:eliminar_curso' curso.pk %}"
+                                style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                    onclick="return confirm('¿Eliminar el curso {{ curso.nombre }}?')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        <i class="bi bi-search me-2"></i>
+                        No se encontraron cursos con los filtros aplicados.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
