@@ -26,15 +26,11 @@
                 <select name="asignacion" class="form-select form-select-sm">
                     <option value="">Todas las asignaciones</option>
                     {% for a in asignaciones %}
-                    {% if filtro_asignacion == a.pk|stringformat:"i" %}
-                    <option value="{{ a.pk }}" selected>
-                        {{ a.materia }} — {{ a.curso }}
-                    </option>
-                    {% else %}
-                    <option value="{{ a.pk }}">
-                        {{ a.materia }} — {{ a.curso }}
-                    </option>
-                    {% endif %}
+                        {% if filtro_asignacion == a.pk|stringformat:"i" %}
+                        <option value="{{ a.pk }}" selected>{{ a.materia }} — {{ a.curso }}</option>
+                        {% else %}
+                        <option value="{{ a.pk }}">{{ a.materia }} — {{ a.curso }}</option>
+                        {% endif %}
                     {% endfor %}
                 </select>
             </div>
@@ -94,7 +90,8 @@
                     <td class="text-muted small">{{ a.observacion|default:"—" }}</td>
                     {% if user.es_profesor or user.es_coordinador %}
                     <td>
-                        <a href="{% url 'academico:editar_asistencia' a.pk %}" class="btn btn-sm btn-outline-secondary">
+                        <a href="{% url 'academico:editar_asistencia' a.pk %}"
+                           class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-pencil"></i>
                         </a>
                     </td>
