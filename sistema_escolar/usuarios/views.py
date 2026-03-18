@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db import models
+from django.db.models import Avg
 from .models import Usuario, Estudiante, Profesor, Acudiente
 from .forms  import UsuarioForm, EstudianteForm, ProfesorForm, AcudienteForm
 from .decorators import solo_coordinador
@@ -71,33 +72,168 @@ def dashboard_view(request):
         })
 
     elif user.es_profesor():
-        from academico.models import Asignacion
+        from academico.models import Asignacion, Actividad, Asistencia
+
         profesor = Profesor.objects.filter(usuario=user).first()
         if profesor:
-            context['mis_asignaciones'] = Asignacion.objects.filter(
+            asignaciones = Asignacion.objects.filter(
                 profesor=profesor
             ).select_related('materia', 'curso')
+
+            total_clases      = asignaciones.count()
+            total_estudiantes = sum(a.curso.estudiantes.count() for a in asignaciones)
+            total_actividades = Actividad.objects.filter(
+                asignacion__profesor=profesor
+            ).count()
+            sin_calificar = Actividad.objects.filter(
+                asignacion__profesor=profesor,
+                entregas__nota_obtenida__isnull=True
+            ).distinct().count()
+
+            asignaciones_data = []
+            for a in asignaciones:
+                total_est   = a.curso.estudiantes.count()
+                total_activ = Actividad.objects.filter(asignacion=a).count()
+                total_asist = Asistencia.objects.filter(asignacion=a).count()
+                presentes   = Asistencia.objects.filter(asignacion=a, presente=True).count()
+                pct_asist   = round((presentes / total_asist * 100)) if total_asist > 0 else 0
+                asignaciones_data.append({
+                    'asignacion':        a,
+                    'total_estudiantes': total_est,
+                    'total_actividades': total_activ,
+                    'pct_asistencia':    pct_asist,
+                })
+
+            context.update({
+                'mis_asignaciones':  asignaciones,
+                'asignaciones_data': asignaciones_data,
+                'total_clases':      total_clases,
+                'total_estudiantes': total_estudiantes,
+                'total_actividades': total_actividades,
+                'sin_calificar':     sin_calificar,
+            })
         else:
-            context['mis_asignaciones'] = []
+            context.update({
+                'mis_asignaciones':  [],
+                'asignaciones_data': [],
+                'total_clases':      0,
+                'total_estudiantes': 0,
+                'total_actividades': 0,
+                'sin_calificar':     0,
+            })
 
     elif user.es_estudiante():
-        from academico.models import Nota
+        from academico.models import Nota, Actividad, Asistencia, Asignacion
+
         estudiante = Estudiante.objects.filter(usuario=user).first()
         if estudiante:
-            context['mis_notas'] = Nota.objects.filter(
+            notas = Nota.objects.filter(
                 estudiante=estudiante
-            ).select_related('asignacion__materia').order_by('-id')[:10]
+            ).select_related('asignacion__materia').order_by('-id')
+
+            total_materias = Asignacion.objects.filter(
+                curso=estudiante.curso
+            ).values('materia').distinct().count()
+
+            promedio = notas.aggregate(Avg('valor'))['valor__avg']
+            promedio = round(promedio, 1) if promedio else 0
+
+            total_asistencias = Asistencia.objects.filter(
+                estudiante=estudiante
+            ).count()
+            presentes = Asistencia.objects.filter(
+                estudiante=estudiante, presente=True
+            ).count()
+            pct_asistencia = round((presentes / total_asistencias * 100)) if total_asistencias > 0 else 0
+
+            actividades_pendientes = Actividad.objects.filter(
+                asignacion__curso=estudiante.curso
+            ).exclude(
+                entregas__estudiante=estudiante
+            ).distinct()
+
+            context.update({
+                'mis_notas':              notas[:10],
+                'total_materias':         total_materias,
+                'promedio_general':       promedio,
+                'pct_asistencia':         pct_asistencia,
+                'actividades_pendientes': actividades_pendientes[:5],
+                'total_pendientes':       actividades_pendientes.count(),
+            })
         else:
-            context['mis_notas'] = []
+            context.update({
+                'mis_notas':              [],
+                'total_materias':         0,
+                'promedio_general':       0,
+                'pct_asistencia':         0,
+                'actividades_pendientes': [],
+                'total_pendientes':       0,
+            })
 
     elif user.es_acudiente():
+        from comercial.models import Cotizacion
+        from academico.models import Nota, Actividad, Asistencia
+
         acudiente = Acudiente.objects.filter(usuario=user).first()
         if acudiente:
-            context['mis_estudiantes'] = acudiente.estudiantes.select_related(
-                'usuario', 'curso'
-            ).all()
+            estudiantes     = acudiente.estudiantes.select_related('usuario', 'curso').all()
+            cotizaciones    = Cotizacion.objects.filter(acudiente=acudiente).order_by('-fecha')
+            total_cots      = cotizaciones.count()
+            cots_pendientes = cotizaciones.filter(estado='pendiente').count()
+            total_valor     = sum(c.total for c in cotizaciones)
+
+            ids_estudiantes = estudiantes.values_list('id', flat=True)
+
+            total_notas = Nota.objects.filter(
+                estudiante__in=ids_estudiantes
+            ).count()
+
+            promedio_general = Nota.objects.filter(
+                estudiante__in=ids_estudiantes
+            ).aggregate(Avg('valor'))['valor__avg']
+            promedio_general = round(promedio_general, 1) if promedio_general else 0
+
+            total_asistencias = Asistencia.objects.filter(
+                estudiante__in=ids_estudiantes
+            ).count()
+            presentes = Asistencia.objects.filter(
+                estudiante__in=ids_estudiantes, presente=True
+            ).count()
+            pct_asistencia = round((presentes / total_asistencias * 100)) if total_asistencias > 0 else 0
+
+            actividades_pendientes = Actividad.objects.filter(
+                asignacion__curso__estudiantes__in=ids_estudiantes
+            ).exclude(
+                entregas__estudiante__in=ids_estudiantes
+            ).distinct().count()
+
+            context.update({
+                'mis_estudiantes':        estudiantes,
+                'total_hijos':            estudiantes.count(),
+                'mis_cotizaciones':       cotizaciones[:5],
+                'total_cotizaciones':     total_cots,
+                'cots_pendientes':        cots_pendientes,
+                'total_valor':            total_valor,
+                'total_notas':            total_notas,
+                'promedio_general':       promedio_general,
+                'total_asistencias':      total_asistencias,
+                'pct_asistencia':         pct_asistencia,
+                'actividades_pendientes': actividades_pendientes,
+            })
         else:
-            context['mis_estudiantes'] = []
+            context.update({
+                'mis_estudiantes':        [],
+                'total_hijos':            0,
+                'mis_cotizaciones':       [],
+                'total_cotizaciones':     0,
+                'cots_pendientes':        0,
+                'total_valor':            0,
+                'total_notas':            0,
+                'promedio_general':       0,
+                'total_asistencias':      0,
+                'pct_asistencia':         0,
+                'actividades_pendientes': 0,
+            })
 
     return render(request, 'usuarios/dashboard.html', context)
 
@@ -392,6 +528,8 @@ def registro_acudiente_view(request):
         'usuario_form': usuario_form,
         'form_acu':     form_acu,
     })
+
+
 @login_required
 @solo_coordinador
 def eliminar_usuario(request, pk):

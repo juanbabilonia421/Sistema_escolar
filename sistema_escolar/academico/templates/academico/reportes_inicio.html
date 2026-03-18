@@ -7,52 +7,6 @@
     <h3 class="mb-0"><i class="bi bi-graph-up me-2"></i>Reportes y Estadísticas</h3>
 </div>
 
-<!-- Tarjetas de resumen -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-2">
-        <div class="card border-0 shadow-sm text-center p-3">
-            <div class="fs-2">🎒</div>
-            <div class="fw-bold fs-4 text-primary">{{ total_estudiantes }}</div>
-            <div class="text-muted small">Estudiantes</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="card border-0 shadow-sm text-center p-3">
-            <div class="fs-2">👩‍🏫</div>
-            <div class="fw-bold fs-4 text-primary">{{ total_profesores }}</div>
-            <div class="text-muted small">Profesores</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="card border-0 shadow-sm text-center p-3">
-            <div class="fs-2">📚</div>
-            <div class="fw-bold fs-4 text-primary">{{ total_cursos }}</div>
-            <div class="text-muted small">Cursos</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="card border-0 shadow-sm text-center p-3">
-            <div class="fs-2">📝</div>
-            <div class="fw-bold fs-4 text-primary">{{ total_notas }}</div>
-            <div class="text-muted small">Notas</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="card border-0 shadow-sm text-center p-3">
-            <div class="fs-2">📋</div>
-            <div class="fw-bold fs-4 text-primary">{{ total_asistencias }}</div>
-            <div class="text-muted small">Asistencias</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-2">
-        <div class="card border-0 shadow-sm text-center p-3">
-            <div class="fs-2">📌</div>
-            <div class="fw-bold fs-4 text-primary">{{ total_actividades }}</div>
-            <div class="text-muted small">Actividades</div>
-        </div>
-    </div>
-</div>
-
 <!-- Promedio general -->
 {% if promedio_general %}
 <div class="alert border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #1a237e, #283593); color: white;">
