@@ -3,77 +3,312 @@
 {% block page_title %}Reportes y Estadísticas{% endblock %}
 
 {% block contenido %}
-<div class="mb-4">
-    <h3 class="mb-0"><i class="bi bi-graph-up me-2"></i>Reportes y Estadísticas</h3>
+
+<style>
+    .reports-header {
+        background: linear-gradient(135deg, #1a237e 0%, #283593 60%, #1565c0 100%);
+        border-radius: 16px;
+        padding: 32px 36px;
+        margin-bottom: 28px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(26, 35, 126, 0.22);
+    }
+    .reports-header::before {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 220px; height: 220px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.06);
+        pointer-events: none;
+    }
+    .reports-header::after {
+        content: '';
+        position: absolute;
+        bottom: -60px; left: 30%;
+        width: 300px; height: 300px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.04);
+        pointer-events: none;
+    }
+    .reports-header .header-label {
+        font-size: 0.72rem;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: #90caf9;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+    .reports-header h2 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #fff;
+        margin: 0 0 6px;
+        letter-spacing: -0.5px;
+    }
+    .reports-header .subtitle {
+        color: rgba(255,255,255,0.65);
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    .promedio-banner {
+        background: #fff;
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(26,35,126,0.08);
+        padding: 24px 28px;
+        margin-bottom: 28px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        border-left: 5px solid #1a237e;
+    }
+    .promedio-badge {
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1a237e, #1565c0);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 14px rgba(26,35,126,0.25);
+    }
+    .promedio-badge i { font-size: 1.6rem; color: #fff; }
+    .promedio-value {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #1a237e;
+        line-height: 1;
+    }
+    .promedio-label {
+        font-size: 0.78rem;
+        color: #78909c;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 4px;
+    }
+    .promedio-divider {
+        width: 1px;
+        height: 48px;
+        background: #e8eaf6;
+        margin: 0 8px;
+    }
+    .promedio-desc {
+        font-size: 0.88rem;
+        color: #546e7a;
+        line-height: 1.5;
+    }
+    .section-label {
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #9fa8da;
+        font-weight: 700;
+        margin-bottom: 16px;
+    }
+    .report-card {
+        background: #fff;
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .report-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 32px rgba(26,35,126,0.14);
+    }
+    .report-card-top {
+        padding: 28px 28px 20px;
+        flex: 1;
+    }
+    .report-card-icon {
+        width: 52px; height: 52px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        margin-bottom: 16px;
+    }
+    .report-card-icon i { font-size: 1.5rem; }
+    .report-card h5 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1a237e;
+        margin-bottom: 8px;
+    }
+    .report-card p {
+        font-size: 0.84rem;
+        color: #78909c;
+        line-height: 1.55;
+        margin: 0;
+    }
+    .report-card-footer {
+        padding: 4px 28px 24px;
+    }
+    .btn-report {
+        background: linear-gradient(135deg, #1a237e, #1565c0);
+        border: none;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 10px 20px;
+        color: #fff;
+        box-shadow: 0 3px 10px rgba(26,35,126,0.2);
+        transition: opacity 0.15s, transform 0.15s;
+        display: block;
+        width: 100%;
+        text-align: center;
+        text-decoration: none;
+    }
+    .btn-report:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        color: #fff;
+        text-decoration: none;
+    }
+    .curso-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 9px 12px;
+        border-radius: 8px;
+        border: 1.5px solid #e8eaf6;
+        background: #fafbff;
+        text-decoration: none;
+        font-size: 0.83rem;
+        font-weight: 600;
+        color: #1a237e;
+        transition: background 0.14s, border-color 0.14s;
+        margin-bottom: 6px;
+    }
+    .curso-link:last-child { margin-bottom: 0; }
+    .curso-link:hover {
+        background: #e8eaf6;
+        border-color: #3949ab;
+        color: #1a237e;
+        text-decoration: none;
+    }
+    .curso-nombre {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .curso-icon {
+        width: 28px; height: 28px;
+        border-radius: 7px;
+        background: #e8eaf6;
+        display: inline-flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .curso-icon i { font-size: 0.82rem; color: #1a237e; }
+    .curso-prom {
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #fff;
+        background: #1a237e;
+        border-radius: 20px;
+        padding: 2px 10px;
+        white-space: nowrap;
+    }
+</style>
+
+<!-- ENCABEZADO -->
+<div class="reports-header">
+    <div class="header-label">Panel analítico</div>
+    <h2><i class="bi bi-graph-up-arrow me-2"></i>Reportes y Estadísticas</h2>
+    <p class="subtitle">Consulta el rendimiento académico, asistencia y progreso por curso</p>
 </div>
 
-<!-- Promedio general -->
+<!-- PROMEDIO GENERAL -->
 {% if promedio_general %}
-<div class="alert border-0 shadow-sm mb-4" style="background: linear-gradient(135deg, #1a237e, #283593); color: white;">
-    <div class="d-flex align-items-center gap-3">
-        <span class="fs-1">🏆</span>
-        <div>
-            <div class="fw-bold fs-5">Promedio general del sistema</div>
-            <div class="fs-2 fw-bold">{{ promedio_general }}</div>
-            <div class="opacity-75 small">Basado en todas las notas registradas</div>
-        </div>
+<div class="promedio-banner">
+    <div class="promedio-badge">
+        <i class="bi bi-trophy-fill"></i>
+    </div>
+    <div>
+        <div class="promedio-value">{{ promedio_general }}</div>
+        <div class="promedio-label">Promedio general del sistema</div>
+    </div>
+    <div class="promedio-divider d-none d-md-block"></div>
+    <div class="promedio-desc d-none d-md-block">
+        <i class="bi bi-info-circle me-1 text-primary"></i>
+        Calculado sobre todas las notas registradas en el sistema.<br>
+        Escala de <strong>1.0</strong> a <strong>5.0</strong>.
     </div>
 </div>
 {% endif %}
 
-<!-- Accesos rápidos a reportes -->
-<div class="row g-4 mb-4">
+<!-- TARJETAS -->
+<div class="section-label">Accesos a reportes</div>
+
+<div class="row g-4">
+
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center p-4">
-                <div class="fs-1 mb-3">📊</div>
-                <h5>Reporte de Notas</h5>
-                <p class="text-muted small">
-                    Promedio por estudiante, filtrado por curso, materia y periodo.
-                </p>
-                <a href="{% url 'academico:reporte_notas' %}" class="btn btn-primary w-100">
-                    Ver reporte
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center p-4">
-                <div class="fs-1 mb-3">📅</div>
-                <h5>Reporte de Asistencia</h5>
-                <p class="text-muted small">
-                    Porcentaje de asistencia por estudiante en cada asignación.
-                </p>
-                <a href="{% url 'academico:reporte_asistencia' %}" class="btn btn-primary w-100">
-                    Ver reporte
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body text-center p-4">
-                <div class="fs-1 mb-3">🏫</div>
-                <h5>Reporte por Curso</h5>
-                <p class="text-muted small">
-                    Promedio general y asistencia de cada curso registrado.
-                </p>
-                <div class="d-grid gap-2">
-                    {% for item in cursos_data %}
-                    <a href="{% url 'academico:reporte_curso' item.curso.pk %}" class="btn btn-outline-primary btn-sm">
-                        {{ item.curso.nombre }}
-                        {% if item.promedio %}
-                        — Prom: {{ item.promedio }}
-                        {% endif %}
-                    </a>
-                    {% empty %}
-                    <p class="text-muted small">No hay cursos registrados.</p>
-                    {% endfor %}
+        <div class="report-card">
+            <div class="report-card-top">
+                <div class="report-card-icon" style="background:#e8eaf6;">
+                    <i class="bi bi-bar-chart-line-fill" style="color:#1a237e;"></i>
                 </div>
+                <h5>Reporte de Notas</h5>
+                <p>Promedio por estudiante, filtrado por curso, materia y periodo académico.</p>
+            </div>
+            <div class="report-card-footer">
+                <a href="{% url 'academico:reporte_notas' %}" class="btn-report">
+                    <i class="bi bi-arrow-right-circle me-2"></i>Ver reporte
+                </a>
             </div>
         </div>
     </div>
+
+    <div class="col-md-4">
+        <div class="report-card">
+            <div class="report-card-top">
+                <div class="report-card-icon" style="background:#e0f2f1;">
+                    <i class="bi bi-calendar2-check-fill" style="color:#00695c;"></i>
+                </div>
+                <h5>Reporte de Asistencia</h5>
+                <p>Porcentaje de asistencia por estudiante desglosado en cada asignación.</p>
+            </div>
+            <div class="report-card-footer">
+                <a href="{% url 'academico:reporte_asistencia' %}" class="btn-report">
+                    <i class="bi bi-arrow-right-circle me-2"></i>Ver reporte
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="report-card">
+            <div class="report-card-top">
+                <div class="report-card-icon" style="background:#e3f2fd;">
+                    <i class="bi bi-building-fill" style="color:#1565c0;"></i>
+                </div>
+                <h5>Reporte por Curso</h5>
+                <p>Promedio general y nivel de asistencia de cada curso registrado.</p>
+            </div>
+            <div class="report-card-footer">
+                {% for item in cursos_data %}
+                <a href="{% url 'academico:reporte_curso' item.curso.pk %}" class="curso-link">
+                    <span class="curso-nombre">
+                        <span class="curso-icon"><i class="bi bi-grid-3x3-gap"></i></span>
+                        {{ item.curso.nombre }}
+                    </span>
+                    {% if item.promedio %}
+                    <span class="curso-prom">{{ item.promedio }}</span>
+                    {% else %}
+                    <span class="text-muted" style="font-size:0.74rem;">Sin notas</span>
+                    {% endif %}
+                </a>
+                {% empty %}
+                <div class="text-muted text-center py-3" style="font-size:0.84rem;">
+                    <i class="bi bi-inbox me-1"></i>No hay cursos registrados.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
 </div>
 
 {% endblock %}

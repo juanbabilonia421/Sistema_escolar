@@ -3,81 +3,296 @@
 {% block page_title %}Reporte de Notas{% endblock %}
 
 {% block contenido %}
-<div class="mb-4">
-    <h3 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Reporte de Notas</h3>
+
+<style>
+    /* Encabezado */
+    .reports-header {
+        background: linear-gradient(135deg, #1a237e 0%, #283593 60%, #1565c0 100%);
+        border-radius: 16px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(26,35,126,0.22);
+    }
+    .reports-header::before {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 200px; height: 200px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.06);
+        pointer-events: none;
+    }
+    .reports-header .header-label {
+        font-size: 0.72rem;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: #90caf9;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .reports-header h2 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #fff;
+        margin: 0 0 4px;
+        letter-spacing: -0.5px;
+    }
+    .reports-header .subtitle {
+        color: rgba(255,255,255,0.6);
+        font-size: 0.88rem;
+        margin: 0;
+    }
+
+    /* Filtros */
+    .filter-card {
+        background: #fff;
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(26,35,126,0.07);
+        padding: 20px 24px;
+        margin-bottom: 24px;
+    }
+    .filter-card .filter-title {
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #9fa8da;
+        font-weight: 700;
+        margin-bottom: 14px;
+    }
+    .filter-card .form-select,
+    .filter-card .form-control {
+        border-radius: 8px;
+        border: 1.5px solid #e8eaf6;
+        font-size: 0.84rem;
+        color: #37474f;
+        background-color: #fafbff;
+    }
+    .filter-card .form-select:focus,
+    .filter-card .form-control:focus {
+        border-color: #3949ab;
+        box-shadow: 0 0 0 3px rgba(57,73,171,0.1);
+    }
+    .filter-card .form-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #546e7a;
+        margin-bottom: 5px;
+    }
+    .btn-filter {
+        background: linear-gradient(135deg, #1a237e, #1565c0);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.84rem;
+        font-weight: 600;
+        padding: 8px 18px;
+        transition: opacity 0.15s;
+    }
+    .btn-filter:hover { opacity: 0.88; color: #fff; }
+    .btn-clear {
+        border-radius: 8px;
+        border: 1.5px solid #e8eaf6;
+        background: #fafbff;
+        color: #546e7a;
+        font-size: 0.84rem;
+        font-weight: 600;
+        padding: 8px 18px;
+        transition: background 0.14s;
+    }
+    .btn-clear:hover { background: #e8eaf6; color: #1a237e; }
+
+    /* Tabla */
+    .table-card {
+        background: #fff;
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(26,35,126,0.07);
+        overflow: hidden;
+    }
+    .table-card .table-header {
+        padding: 16px 24px;
+        border-bottom: 1px solid #f0f2f5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .table-card .table-header .title {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #1a237e;
+    }
+    .count-badge {
+        background: #e8eaf6;
+        color: #1a237e;
+        font-size: 0.75rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 3px 12px;
+    }
+    .table { margin: 0; }
+    .table thead th {
+        background: #fafbff;
+        border-bottom: 1.5px solid #e8eaf6;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #78909c;
+        padding: 12px 16px;
+    }
+    .table tbody td {
+        padding: 13px 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f5f6fa;
+        font-size: 0.875rem;
+        color: #37474f;
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .table tbody tr:hover td { background: #fafbff; }
+
+    /* Estudiante cell */
+    .student-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .student-avatar {
+        width: 34px; height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1a237e, #1565c0);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    .student-name { font-weight: 700; color: #1a237e; font-size: 0.875rem; }
+    .student-code { font-size: 0.75rem; color: #90a4ae; }
+
+    /* Promedio pill */
+    .promedio-pill {
+        display: inline-block;
+        font-size: 0.9rem;
+        font-weight: 800;
+        padding: 4px 14px;
+        border-radius: 20px;
+    }
+    .promedio-pill.aprobado  { background: #e8f5e9; color: #2e7d32; }
+    .promedio-pill.reprobado { background: #ffebee; color: #c62828; }
+
+    /* Estado badges */
+    .estado-badge {
+        font-size: 0.73rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 4px 11px;
+        letter-spacing: 0.3px;
+    }
+    .estado-excelente { background: #e8f5e9; color: #2e7d32; }
+    .estado-bueno     { background: #e3f2fd; color: #1565c0; }
+    .estado-aprobado  { background: #fff8e1; color: #f57f17; }
+    .estado-riesgo    { background: #ffebee; color: #c62828; }
+
+    /* Stat mini */
+    .stat-mini { font-size: 0.875rem; font-weight: 600; }
+    .stat-mini.ok   { color: #2e7d32; }
+    .stat-mini.fail { color: #c62828; }
+
+    /* Btn ver */
+    .btn-ver {
+        width: 32px; height: 32px;
+        border-radius: 8px;
+        border: 1.5px solid #e8eaf6;
+        background: #fafbff;
+        color: #1a237e;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: background 0.14s, border-color 0.14s;
+        text-decoration: none;
+    }
+    .btn-ver:hover { background: #e8eaf6; border-color: #1a237e; color: #1a237e; }
+
+    /* Empty state */
+    .empty-state {
+        padding: 56px 24px;
+        text-align: center;
+        color: #90a4ae;
+    }
+    .empty-state i { font-size: 2.5rem; margin-bottom: 12px; display: block; color: #c5cae9; }
+    .empty-state p { font-size: 0.88rem; margin: 0; }
+</style>
+
+<!-- ENCABEZADO -->
+<div class="reports-header">
+    <div class="header-label">Panel analítico</div>
+    <h2><i class="bi bi-bar-chart-line me-2"></i>Reporte de Notas</h2>
+    <p class="subtitle">Promedio por estudiante · Filtrado por curso, materia y periodo</p>
 </div>
 
-<!-- Filtros -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small">Curso</label>
-                <select name="curso" class="form-select form-select-sm">
-                    <option value="">Todos los cursos</option>
-                    {% for c in cursos %}
-                    {% if filtro_curso == c.pk|stringformat:"i" %}
-                    <option value="{{ c.pk }}" selected>{{ c.nombre }}</option>
-                    {% else %}
-                    <option value="{{ c.pk }}">{{ c.nombre }}</option>
-                    {% endif %}
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small">Materia</label>
-                <select name="materia" class="form-select form-select-sm">
-                    <option value="">Todas las materias</option>
-                    {% for m in materias %}
-                    {% if filtro_materia == m.pk|stringformat:"i" %}
-                    <option value="{{ m.pk }}" selected>{{ m.nombre }}</option>
-                    {% else %}
-                    <option value="{{ m.pk }}">{{ m.nombre }}</option>
-                    {% endif %}
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small">Periodo</label>
-                <select name="periodo" class="form-select form-select-sm">
-                    <option value="">Todos los periodos</option>
-                    {% for valor, nombre in periodos %}
-                    {% if filtro_periodo == valor %}
-                    <option value="{{ valor }}" selected>{{ nombre }}</option>
-                    {% else %}
-                    <option value="{{ valor }}">{{ nombre }}</option>
-                    {% endif %}
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-1">
-                <button type="submit" class="btn btn-primary btn-sm w-100">
-                    <i class="bi bi-funnel"></i>
-                </button>
-            </div>
-            <div class="col-md-2">
-                <a href="{% url 'academico:reporte_notas' %}" class="btn btn-outline-secondary btn-sm w-100">
-                    Limpiar
-                </a>
-            </div>
-        </form>
-    </div>
+<!-- FILTROS -->
+<div class="filter-card">
+    <div class="filter-title"><i class="bi bi-funnel me-1"></i>Filtros</div>
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">Curso</label>
+            <select name="curso" class="form-select form-select-sm">
+                <option value="">Todos los cursos</option>
+                {% for c in cursos %}
+                <option value="{{ c.pk }}" {% if filtro_curso == c.pk|stringformat:"i" %}selected{% endif %}>
+                    {{ c.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Materia</label>
+            <select name="materia" class="form-select form-select-sm">
+                <option value="">Todas las materias</option>
+                {% for m in materias %}
+                <option value="{{ m.pk }}" {% if filtro_materia == m.pk|stringformat:"i" %}selected{% endif %}>
+                    {{ m.nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Periodo</label>
+            <select name="periodo" class="form-select form-select-sm">
+                <option value="">Todos los periodos</option>
+                {% for valor, nombre in periodos %}
+                <option value="{{ valor }}" {% if filtro_periodo == valor %}selected{% endif %}>
+                    {{ nombre }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn-filter flex-grow-1">
+                <i class="bi bi-funnel me-1"></i>Filtrar
+            </button>
+            <a href="{% url 'academico:reporte_notas' %}" class="btn-clear">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        </div>
+    </form>
 </div>
 
-<!-- Tabla de resultados -->
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white fw-semibold">
-        Promedio por estudiante
-        <span class="badge bg-secondary ms-2">{{ reporte|length }} estudiantes</span>
+<!-- TABLA -->
+<div class="table-card">
+    <div class="table-header">
+        <span class="title"><i class="bi bi-people me-2"></i>Promedio por estudiante</span>
+        <span class="count-badge">{{ reporte|length }} estudiantes</span>
     </div>
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
                 <tr>
                     <th>#</th>
                     <th>Estudiante</th>
                     <th>Curso</th>
-                    <th class="text-center">Total notas</th>
+                    <th class="text-center">Notas</th>
                     <th class="text-center">Aprobadas</th>
                     <th class="text-center">Reprobadas</th>
                     <th class="text-center">Promedio</th>
@@ -88,41 +303,56 @@
             <tbody>
                 {% for r in reporte %}
                 <tr>
-                    <td class="text-muted">{{ forloop.counter }}</td>
-                    <td><strong>{{ r.estudiante.usuario.get_full_name }}</strong></td>
-                    <td>{{ r.estudiante.curso }}</td>
-                    <td class="text-center">{{ r.total_notas }}</td>
-                    <td class="text-center text-success fw-semibold">{{ r.aprobadas }}</td>
-                    <td class="text-center text-danger fw-semibold">{{ r.reprobadas }}</td>
+                    <td class="text-muted" style="width:40px;">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="student-cell">
+                            <div class="student-avatar">
+                                {{ r.estudiante.usuario.first_name|first|upper }}{{ r.estudiante.usuario.last_name|first|upper }}
+                            </div>
+                            <div>
+                                <div class="student-name">{{ r.estudiante.usuario.get_full_name }}</div>
+                                <div class="student-code">{{ r.estudiante.codigo_estudiantil|default:"—" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-size:0.82rem; background:#e8eaf6; color:#1a237e;
+                                     border-radius:6px; padding:3px 10px; font-weight:600;">
+                            {{ r.estudiante.curso }}
+                        </span>
+                    </td>
+                    <td class="text-center" style="font-weight:600; color:#546e7a;">{{ r.total_notas }}</td>
+                    <td class="text-center"><span class="stat-mini ok">{{ r.aprobadas }}</span></td>
+                    <td class="text-center"><span class="stat-mini fail">{{ r.reprobadas }}</span></td>
                     <td class="text-center">
-                        <span class="fw-bold fs-5
-              {% if r.promedio >= 3.0 %}text-success
-              {% else %}text-danger{% endif %}">
+                        <span class="promedio-pill {% if r.promedio >= 3.0 %}aprobado{% else %}reprobado{% endif %}">
                             {{ r.promedio }}
                         </span>
                     </td>
                     <td>
                         {% if r.promedio >= 4.5 %}
-                        <span class="badge bg-success">Excelente</span>
+                        <span class="estado-badge estado-excelente">Excelente</span>
                         {% elif r.promedio >= 3.5 %}
-                        <span class="badge bg-primary">Bueno</span>
+                        <span class="estado-badge estado-bueno">Bueno</span>
                         {% elif r.promedio >= 3.0 %}
-                        <span class="badge bg-warning text-dark">Aprobado</span>
+                        <span class="estado-badge estado-aprobado">Aprobado</span>
                         {% else %}
-                        <span class="badge bg-danger">En riesgo</span>
+                        <span class="estado-badge estado-riesgo">En riesgo</span>
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'academico:reporte_estudiante' r.estudiante.pk %}"
-                            class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i>
+                        <a href="{% url 'academico:reporte_estudiante' r.estudiante.pk %}" class="btn-ver">
+                            <i class="bi bi-eye" style="font-size:0.8rem;"></i>
                         </a>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="9" class="text-center text-muted py-5">
-                        No hay datos con los filtros seleccionados.
+                    <td colspan="9">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <p>No hay datos con los filtros seleccionados.</p>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -130,4 +360,5 @@
         </table>
     </div>
 </div>
+
 {% endblock %}

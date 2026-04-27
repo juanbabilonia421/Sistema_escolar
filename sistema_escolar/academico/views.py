@@ -14,6 +14,7 @@ from .decorators import (
     solo_coordinador, coordinador_o_profesor,
     solo_estudiante, no_estudiante
 )
+from usuarios.decorators import requiere_password_cambiado
 
 
 # ─────────────────────────────────────────
@@ -21,6 +22,7 @@ from .decorators import (
 # ─────────────────────────────────────────
 
 @login_required
+@requiere_password_cambiado
 def lista_cursos(request):
     from django.db import models as db_models
 
@@ -32,7 +34,7 @@ def lista_cursos(request):
 
     if busqueda:
         cursos = cursos.filter(
-            db_models.Q(nombre__icontains=busqueda) 
+            db_models.Q(nombre__icontains=busqueda)
         )
     if año_escolar:
         cursos = cursos.filter(año_escolar=año_escolar)
@@ -43,21 +45,21 @@ def lista_cursos(request):
         'año_escolar', flat=True
     ).distinct().order_by('-año_escolar')
 
-    # Convertir a int para comparar correctamente en el template
     año_escolar_int = int(año_escolar) if año_escolar else None
 
     return render(request, 'academico/lista_cursos.html', {
-        'cursos':            cursos,
-        'busqueda':          busqueda,
-        'año_escolar':       año_escolar,
-        'año_escolar_int':   año_escolar_int,
-        'nivel':             nivel,
-        'años_disponibles':  años_disponibles,
-        'niveles':           Curso.nivel.field.choices if hasattr(Curso.nivel, 'field') else [],
+        'cursos':           cursos,
+        'busqueda':         busqueda,
+        'año_escolar':      año_escolar,
+        'año_escolar_int':  año_escolar_int,
+        'nivel':            nivel,
+        'años_disponibles': años_disponibles,
+        'niveles':          Curso.nivel.field.choices if hasattr(Curso.nivel, 'field') else [],
     })
 
 
 @login_required
+@requiere_password_cambiado
 def detalle_curso(request, pk):
     curso        = get_object_or_404(Curso, pk=pk)
     estudiantes  = curso.estudiantes.select_related('usuario').all()
@@ -70,6 +72,7 @@ def detalle_curso(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def crear_curso(request):
     form = CursoForm(request.POST or None)
@@ -84,6 +87,7 @@ def crear_curso(request):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def editar_curso(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
@@ -99,6 +103,7 @@ def editar_curso(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def eliminar_curso(request, pk):
     curso = get_object_or_404(Curso, pk=pk)
@@ -118,11 +123,11 @@ def eliminar_curso(request, pk):
 # ─────────────────────────────────────────
 
 @login_required
+@requiere_password_cambiado
 def lista_materias(request):
     from django.db import models as db_models
 
     materias = Materia.objects.all().order_by('nombre')
-
     busqueda = request.GET.get('q', '')
 
     if busqueda:
@@ -138,6 +143,7 @@ def lista_materias(request):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def crear_materia(request):
     form = MateriaForm(request.POST or None)
@@ -152,6 +158,7 @@ def crear_materia(request):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def editar_materia(request, pk):
     materia = get_object_or_404(Materia, pk=pk)
@@ -167,6 +174,7 @@ def editar_materia(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def eliminar_materia(request, pk):
     materia = get_object_or_404(Materia, pk=pk)
@@ -186,6 +194,7 @@ def eliminar_materia(request, pk):
 # ─────────────────────────────────────────
 
 @login_required
+@requiere_password_cambiado
 def lista_asignaciones(request):
     from django.db import models as db_models
     from usuarios.models import Profesor
@@ -225,17 +234,19 @@ def lista_asignaciones(request):
     materia_id_int = int(materia_id) if materia_id else None
 
     return render(request, 'academico/lista_asignaciones.html', {
-        'asignaciones':  asignaciones,
-        'busqueda':      busqueda,
-        'curso_id':      curso_id,
-        'materia_id':    materia_id,
-        'curso_id_int':  curso_id_int,
+        'asignaciones':   asignaciones,
+        'busqueda':       busqueda,
+        'curso_id':       curso_id,
+        'materia_id':     materia_id,
+        'curso_id_int':   curso_id_int,
         'materia_id_int': materia_id_int,
-        'cursos':        cursos,
-        'materias':      materias,
+        'cursos':         cursos,
+        'materias':       materias,
     })
 
+
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def crear_asignacion(request):
     form = AsignacionForm(request.POST or None)
@@ -250,6 +261,7 @@ def crear_asignacion(request):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def editar_asignacion(request, pk):
     asignacion = get_object_or_404(Asignacion, pk=pk)
@@ -265,6 +277,7 @@ def editar_asignacion(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def eliminar_asignacion(request, pk):
     asignacion = get_object_or_404(Asignacion, pk=pk)
@@ -284,6 +297,7 @@ def eliminar_asignacion(request, pk):
 # ─────────────────────────────────────────
 
 @login_required
+@requiere_password_cambiado
 def lista_notas(request):
     user = request.user
     if user.es_estudiante():
@@ -307,6 +321,7 @@ def lista_notas(request):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def crear_nota(request):
     form = NotaForm(request.POST or None)
@@ -327,6 +342,7 @@ def crear_nota(request):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def editar_nota(request, pk):
     nota = get_object_or_404(Nota, pk=pk)
@@ -346,6 +362,7 @@ def editar_nota(request, pk):
 # ─────────────────────────────────────────
 
 @login_required
+@requiere_password_cambiado
 def lista_asistencias(request):
     from usuarios.models import Profesor as ProfesorModel
     user         = request.user
@@ -382,6 +399,7 @@ def lista_asistencias(request):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def registrar_asistencia(request):
     from usuarios.models import Profesor as ProfesorModel, Estudiante as EstudianteModel
@@ -448,6 +466,7 @@ def registrar_asistencia(request):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def editar_asistencia(request, pk):
     asistencia = get_object_or_404(Asistencia, pk=pk)
@@ -463,6 +482,7 @@ def editar_asistencia(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def reporte_asistencia(request):
     from usuarios.models import Profesor as ProfesorModel
@@ -512,6 +532,7 @@ def reporte_asistencia(request):
 # ─────────────────────────────────────────
 
 @login_required
+@requiere_password_cambiado
 def lista_actividades(request):
     from django.db import models as db_models
     from usuarios.models import Profesor as ProfesorModel, Estudiante as EstudianteModel
@@ -535,7 +556,6 @@ def lista_actividades(request):
             'asignacion__materia', 'asignacion__curso'
         ).order_by('-fecha_entrega')
 
-    # Filtros
     busqueda   = request.GET.get('q', '')
     materia_id = request.GET.get('materia', '')
     periodo    = request.GET.get('periodo', '')
@@ -550,9 +570,8 @@ def lista_actividades(request):
     if periodo:
         actividades = actividades.filter(periodo=periodo)
 
-    materias = Materia.objects.all().order_by('nombre')
-    periodos  = Nota.Periodo.choices
-
+    materias       = Materia.objects.all().order_by('nombre')
+    periodos       = Nota.Periodo.choices
     materia_id_int = int(materia_id) if materia_id else None
 
     return render(request, 'academico/lista_actividades.html', {
@@ -567,6 +586,7 @@ def lista_actividades(request):
 
 
 @login_required
+@requiere_password_cambiado
 def detalle_actividad(request, pk):
     from usuarios.models import Estudiante as EstudianteModel
     actividad  = get_object_or_404(Actividad, pk=pk)
@@ -589,6 +609,7 @@ def detalle_actividad(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def crear_actividad(request):
     from usuarios.models import Profesor as ProfesorModel
@@ -612,6 +633,7 @@ def crear_actividad(request):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def editar_actividad(request, pk):
     actividad = get_object_or_404(Actividad, pk=pk)
@@ -627,6 +649,7 @@ def editar_actividad(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def eliminar_actividad(request, pk):
     actividad = get_object_or_404(Actividad, pk=pk)
@@ -642,6 +665,7 @@ def eliminar_actividad(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_estudiante
 def entregar_actividad(request, pk):
     from usuarios.models import Estudiante as EstudianteModel
@@ -670,6 +694,7 @@ def entregar_actividad(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def calificar_entrega(request, pk):
     entrega = get_object_or_404(EntregaActividad, pk=pk)
@@ -677,8 +702,7 @@ def calificar_entrega(request, pk):
     if form.is_valid():
         entrega = form.save()
 
-        # Crear o actualizar la nota automáticamente
-        if entrega.nota_obtenida is not None:
+        if entrega.nota_obtenida is not None and entrega.actividad.periodo:
             Nota.objects.update_or_create(
                 estudiante = entrega.estudiante,
                 asignacion = entrega.actividad.asignacion,
@@ -698,11 +722,13 @@ def calificar_entrega(request, pk):
         'titulo':  'Calificar entrega',
     })
 
+
 # ─────────────────────────────────────────
-# REPORTES Y ESTADÍSTICAS
+# REPORTES
 # ─────────────────────────────────────────
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def reportes_inicio(request):
     from usuarios.models import Estudiante as EstudianteModel, Profesor as ProfesorModel
@@ -743,6 +769,7 @@ def reportes_inicio(request):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def reporte_notas(request):
     from django.db.models import Avg
@@ -814,6 +841,7 @@ def reporte_notas(request):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def reporte_estudiante(request, pk):
     from django.db.models import Avg
@@ -860,6 +888,7 @@ def reporte_estudiante(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_profesor
 def reporte_curso(request, pk):
     from django.db.models import Avg

@@ -3,26 +3,235 @@
 {% block page_title %}Reporte de curso{% endblock %}
 
 {% block contenido %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0">
-        <i class="bi bi-grid-3x3-gap me-2"></i>{{ curso.nombre }} — {{ curso.año_escolar }}
-    </h3>
-    <a href="{% url 'academico:reportes_inicio' %}" class="btn btn-outline-secondary">
+
+<style>
+    /* Encabezado */
+    .reports-header {
+        background: linear-gradient(135deg, #1a237e 0%, #283593 60%, #1565c0 100%);
+        border-radius: 16px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(26,35,126,0.22);
+    }
+    .reports-header::before {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 200px; height: 200px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.06);
+        pointer-events: none;
+    }
+    .reports-header .header-label {
+        font-size: 0.72rem;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: #90caf9;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .reports-header h2 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #fff;
+        margin: 0 0 4px;
+        letter-spacing: -0.5px;
+    }
+    .reports-header .subtitle {
+        color: rgba(255,255,255,0.6);
+        font-size: 0.88rem;
+        margin: 0;
+    }
+    .btn-back {
+        background: rgba(255,255,255,0.15);
+        border: 1.5px solid rgba(255,255,255,0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.84rem;
+        font-weight: 600;
+        padding: 8px 16px;
+        text-decoration: none;
+        transition: background 0.15s;
+        white-space: nowrap;
+    }
+    .btn-back:hover { background: rgba(255,255,255,0.25); color: #fff; }
+
+    /* Sección label */
+    .section-label {
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #9fa8da;
+        font-weight: 700;
+        margin-bottom: 14px;
+    }
+
+    /* Cards */
+    .report-card {
+        background: #fff;
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(26,35,126,0.07);
+        overflow: hidden;
+        height: 100%;
+    }
+    .report-card-header {
+        padding: 14px 20px;
+        border-bottom: 1px solid #f0f2f5;
+        background: #fafbff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .report-card-header .title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #1a237e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .report-card-header .title .hdr-icon {
+        width: 28px; height: 28px;
+        border-radius: 7px;
+        background: #e8eaf6;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .report-card-header .title .hdr-icon i { font-size: 0.82rem; color: #1a237e; }
+    .count-badge {
+        background: #e8eaf6;
+        color: #1a237e;
+        font-size: 0.74rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 3px 11px;
+    }
+
+    /* Tabla */
+    .table { margin: 0; }
+    .table thead th {
+        background: #fff;
+        border-bottom: 1.5px solid #f0f2f5;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #90a4ae;
+        padding: 10px 16px;
+    }
+    .table tbody td {
+        padding: 12px 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f5f6fa;
+        font-size: 0.875rem;
+        color: #37474f;
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .table tbody tr:hover td { background: #fafbff; }
+
+    /* Materia row */
+    .materia-nombre {
+        font-weight: 600;
+        color: #1a237e;
+        font-size: 0.875rem;
+    }
+    .profesor-nombre {
+        font-size: 0.78rem;
+        color: #90a4ae;
+    }
+
+    /* Promedio pill */
+    .prom-pill {
+        display: inline-block;
+        font-size: 0.85rem;
+        font-weight: 800;
+        padding: 3px 13px;
+        border-radius: 20px;
+    }
+    .prom-pill.ok   { background: #e8f5e9; color: #2e7d32; }
+    .prom-pill.fail { background: #ffebee; color: #c62828; }
+    .prom-pill.none { background: #eceff1; color: #90a4ae; }
+
+    /* Asistencia pill */
+    .asist-pill {
+        display: inline-block;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 3px 11px;
+        border-radius: 20px;
+    }
+    .asist-pill.high { background: #e8f5e9; color: #2e7d32; }
+    .asist-pill.mid  { background: #fff8e1; color: #f57f17; }
+    .asist-pill.low  { background: #ffebee; color: #c62828; }
+
+    /* Estudiante cell */
+    .student-cell { display: flex; align-items: center; gap: 10px; }
+    .student-avatar {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1a237e, #1565c0);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    .student-name { font-weight: 700; color: #1a237e; font-size: 0.875rem; }
+
+    /* Btn ver */
+    .btn-ver {
+        width: 30px; height: 30px;
+        border-radius: 8px;
+        border: 1.5px solid #e8eaf6;
+        background: #fafbff;
+        color: #1a237e;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: background 0.14s, border-color 0.14s;
+        text-decoration: none;
+    }
+    .btn-ver:hover { background: #e8eaf6; border-color: #1a237e; color: #1a237e; }
+
+    /* Empty */
+    .empty-state {
+        padding: 40px 24px;
+        text-align: center;
+        color: #90a4ae;
+    }
+    .empty-state i { font-size: 2rem; display: block; margin-bottom: 10px; color: #c5cae9; }
+    .empty-state p { font-size: 0.85rem; margin: 0; }
+</style>
+
+<!-- ENCABEZADO -->
+<div class="reports-header d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+        <div class="header-label">Reporte de curso</div>
+        <h2><i class="bi bi-grid-3x3-gap me-2"></i>{{ curso.nombre }}</h2>
+        <p class="subtitle">Año escolar {{ curso.año_escolar }} · Promedio por materia y estudiante</p>
+    </div>
+    <a href="{% url 'academico:reportes_inicio' %}" class="btn-back">
         <i class="bi bi-arrow-left me-1"></i>Volver
     </a>
 </div>
 
+<!-- CONTENIDO -->
 <div class="row g-4">
 
     <!-- Promedio por materia -->
     <div class="col-md-5">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white fw-semibold">
-                <i class="bi bi-book me-2"></i>Promedio por materia
+        <div class="section-label"><i class="bi bi-book me-1"></i>Por materia</div>
+        <div class="report-card">
+            <div class="report-card-header">
+                <div class="title">
+                    <span class="hdr-icon"><i class="bi bi-book"></i></span>
+                    Promedio por materia
+                </div>
+                <span class="count-badge">{{ materias_data|length }}</span>
             </div>
-            <div class="card-body p-0">
-                <table class="table table-sm mb-0">
-                    <thead class="table-light">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
                         <tr>
                             <th>Materia</th>
                             <th>Profesor</th>
@@ -32,25 +241,33 @@
                     <tbody>
                         {% for m in materias_data %}
                         <tr>
-                            <td>{{ m.asignacion.materia.nombre }}</td>
-                            <td class="small text-muted">
-                                {{ m.asignacion.profesor.usuario.get_full_name }}
+                            <td>
+                                <div class="materia-nombre">{{ m.asignacion.materia.nombre }}</div>
+                            </td>
+                            <td>
+                                <div class="profesor-nombre">
+                                    {{ m.asignacion.profesor.usuario.get_full_name }}
+                                </div>
                             </td>
                             <td class="text-center">
                                 {% if m.promedio %}
-                                <span class="badge
-                    {% if m.promedio >= 3.0 %}bg-success{% else %}bg-danger{% endif %}">
-                                    {{ m.promedio }}
-                                </span>
+                                    {% if m.promedio >= 3.0 %}
+                                    <span class="prom-pill ok">{{ m.promedio }}</span>
+                                    {% else %}
+                                    <span class="prom-pill fail">{{ m.promedio }}</span>
+                                    {% endif %}
                                 {% else %}
-                                <span class="text-muted">—</span>
+                                <span class="prom-pill none">—</span>
                                 {% endif %}
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="3" class="text-muted text-center py-3">
-                                Sin asignaciones.
+                            <td colspan="3">
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox"></i>
+                                    <p>Sin asignaciones registradas.</p>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -62,14 +279,18 @@
 
     <!-- Promedio por estudiante -->
     <div class="col-md-7">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white fw-semibold">
-                <i class="bi bi-people me-2"></i>
-                Estudiantes ({{ estudiantes_data|length }})
+        <div class="section-label"><i class="bi bi-people me-1"></i>Por estudiante</div>
+        <div class="report-card">
+            <div class="report-card-header">
+                <div class="title">
+                    <span class="hdr-icon"><i class="bi bi-people"></i></span>
+                    Estudiantes
+                </div>
+                <span class="count-badge">{{ estudiantes_data|length }}</span>
             </div>
-            <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
                         <tr>
                             <th>#</th>
                             <th>Estudiante</th>
@@ -81,38 +302,48 @@
                     <tbody>
                         {% for e in estudiantes_data %}
                         <tr>
-                            <td class="text-muted">{{ forloop.counter }}</td>
-                            <td><strong>{{ e.estudiante.usuario.get_full_name }}</strong></td>
+                            <td class="text-muted" style="width:36px;">{{ forloop.counter }}</td>
+                            <td>
+                                <div class="student-cell">
+                                    <div class="student-avatar">
+                                        {{ e.estudiante.usuario.first_name|first|upper }}{{ e.estudiante.usuario.last_name|first|upper }}
+                                    </div>
+                                    <span class="student-name">{{ e.estudiante.usuario.get_full_name }}</span>
+                                </div>
+                            </td>
                             <td class="text-center">
                                 {% if e.promedio %}
-                                <span class="fw-bold
-                    {% if e.promedio >= 3.0 %}text-success{% else %}text-danger{% endif %}">
-                                    {{ e.promedio }}
-                                </span>
+                                    {% if e.promedio >= 3.0 %}
+                                    <span class="prom-pill ok">{{ e.promedio }}</span>
+                                    {% else %}
+                                    <span class="prom-pill fail">{{ e.promedio }}</span>
+                                    {% endif %}
                                 {% else %}
-                                <span class="text-muted">—</span>
+                                <span class="prom-pill none">—</span>
                                 {% endif %}
                             </td>
                             <td class="text-center">
                                 {% if e.pct_asistencia >= 80 %}
-                                <span class="badge bg-success">{{ e.pct_asistencia }}%</span>
+                                <span class="asist-pill high">{{ e.pct_asistencia }}%</span>
                                 {% elif e.pct_asistencia >= 60 %}
-                                <span class="badge bg-warning text-dark">{{ e.pct_asistencia }}%</span>
+                                <span class="asist-pill mid">{{ e.pct_asistencia }}%</span>
                                 {% else %}
-                                <span class="badge bg-danger">{{ e.pct_asistencia }}%</span>
+                                <span class="asist-pill low">{{ e.pct_asistencia }}%</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'academico:reporte_estudiante' e.estudiante.pk %}"
-                                    class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye"></i>
+                                <a href="{% url 'academico:reporte_estudiante' e.estudiante.pk %}" class="btn-ver">
+                                    <i class="bi bi-eye" style="font-size:0.78rem;"></i>
                                 </a>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                No hay estudiantes en este curso.
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox"></i>
+                                    <p>No hay estudiantes en este curso.</p>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
@@ -123,4 +354,5 @@
     </div>
 
 </div>
+
 {% endblock %}

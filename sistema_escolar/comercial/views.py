@@ -6,6 +6,7 @@ from django.contrib import messages
 from .models import Producto, Cotizacion, DetalleCotizacion
 from .forms  import ProductoForm, CotizacionAcudienteForm, CotizacionCoordinadorForm, DetalleCotizacionForm
 from .decorators import solo_coordinador, coordinador_o_acudiente
+from usuarios.decorators import requiere_password_cambiado
 
 
 # ─────────────────────────────────────────
@@ -13,12 +14,12 @@ from .decorators import solo_coordinador, coordinador_o_acudiente
 # ─────────────────────────────────────────
 
 @login_required
+@requiere_password_cambiado
 def lista_productos(request):
     from django.db import models as db_models
 
     productos = Producto.objects.all().order_by('categoria', 'nombre')
 
-    # Filtros
     busqueda  = request.GET.get('q', '')
     categoria = request.GET.get('categoria', '')
     estado    = request.GET.get('estado', '')
@@ -47,6 +48,7 @@ def lista_productos(request):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def crear_producto(request):
     form = ProductoForm(request.POST or None)
@@ -61,6 +63,7 @@ def crear_producto(request):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def editar_producto(request, pk):
     producto = get_object_or_404(Producto, pk=pk)
@@ -76,6 +79,7 @@ def editar_producto(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def eliminar_producto(request, pk):
     producto = get_object_or_404(Producto, pk=pk)
@@ -95,6 +99,7 @@ def eliminar_producto(request, pk):
 # ─────────────────────────────────────────
 
 @login_required
+@requiere_password_cambiado
 def lista_cotizaciones(request):
     from django.db import models as db_models
     user = request.user
@@ -110,7 +115,6 @@ def lista_cotizaciones(request):
             'acudiente__usuario'
         ).order_by('-fecha')
 
-    # Filtros
     busqueda = request.GET.get('q', '')
     estado   = request.GET.get('estado', '')
 
@@ -134,6 +138,7 @@ def lista_cotizaciones(request):
 
 
 @login_required
+@requiere_password_cambiado
 def detalle_cotizacion(request, pk):
     cotizacion = get_object_or_404(Cotizacion, pk=pk)
     detalles   = cotizacion.detalles.select_related('producto').all()
@@ -144,6 +149,7 @@ def detalle_cotizacion(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_acudiente
 def crear_cotizacion(request):
     user = request.user
@@ -172,6 +178,7 @@ def crear_cotizacion(request):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_acudiente
 def agregar_detalle(request, pk):
     cotizacion = get_object_or_404(Cotizacion, pk=pk)
@@ -184,9 +191,29 @@ def agregar_detalle(request, pk):
     if form.is_valid():
         detalle            = form.save(commit=False)
         detalle.cotizacion = cotizacion
+        producto           = detalle.producto
+        cantidad           = detalle.cantidad
+
+        if cantidad > producto.stock:
+            messages.error(
+                request,
+                f'Stock insuficiente. Solo hay {producto.stock} unidades de {producto.nombre}.'
+            )
+            detalles = cotizacion.detalles.select_related('producto').all()
+            return render(request, 'comercial/agregar_detalle.html', {
+                'cotizacion': cotizacion,
+                'form':       form,
+                'detalles':   detalles,
+            })
+
+        detalle.precio_unitario = producto.precio
         detalle.save()
+
+        producto.stock -= cantidad
+        producto.save()
+
         cotizacion.calcular_total()
-        messages.success(request, 'Producto agregado.')
+        messages.success(request, f'{producto.nombre} agregado a la cotización.')
         return redirect('comercial:agregar_detalle', pk=cotizacion.pk)
 
     detalles = cotizacion.detalles.select_related('producto').all()
@@ -198,18 +225,26 @@ def agregar_detalle(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @coordinador_o_acudiente
 def eliminar_detalle(request, pk):
     detalle    = get_object_or_404(DetalleCotizacion, pk=pk)
     cotizacion = detalle.cotizacion
+
     if request.method == 'POST':
+        producto        = detalle.producto
+        producto.stock += detalle.cantidad
+        producto.save()
+
         detalle.delete()
         cotizacion.calcular_total()
         messages.success(request, 'Producto eliminado de la cotización.')
+
     return redirect('comercial:agregar_detalle', pk=cotizacion.pk)
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def editar_cotizacion(request, pk):
     cotizacion = get_object_or_404(Cotizacion, pk=pk)
@@ -225,13 +260,20 @@ def editar_cotizacion(request, pk):
 
 
 @login_required
+@requiere_password_cambiado
 @solo_coordinador
 def eliminar_cotizacion(request, pk):
     cotizacion = get_object_or_404(Cotizacion, pk=pk)
     if request.method == 'POST':
+        for detalle in cotizacion.detalles.all():
+            producto        = detalle.producto
+            producto.stock += detalle.cantidad
+            producto.save()
+
         cotizacion.delete()
         messages.success(request, 'Cotización eliminada.')
         return redirect('comercial:lista_cotizaciones')
+
     return render(request, 'comercial/confirmar_eliminar.html', {
         'objeto': cotizacion,
         'titulo': 'Eliminar cotización',

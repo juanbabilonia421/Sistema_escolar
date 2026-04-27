@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
-{% block titulo %}Editar Usuario{% endblock %}
-{% block page_title %}Editar usuario{% endblock %}
+{% block titulo %}Nuevo usuario{% endblock %}
+{% block page_title %}Nuevo usuario{% endblock %}
 
 {% block contenido %}
 <style>
@@ -43,14 +43,60 @@
     }
     .btn-volver:hover { background: #e8eaf6; color: #1a237e; }
 
-    /* Formulario card */
+    /* Aviso automático */
+    .auto-notice {
+        background: #e8eaf6;
+        border-radius: 12px;
+        padding: 14px 18px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+    .auto-notice-icon {
+        width: 34px; height: 34px;
+        border-radius: 50%;
+        background: #1a237e;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .auto-notice-icon i { font-size: 0.9rem; color: #fff; }
+    .auto-notice-text {
+        font-size: 0.84rem;
+        color: #37474f;
+        line-height: 1.5;
+    }
+    .auto-notice-text strong { color: #1a237e; }
+
+    /* Items generados automáticamente */
+    .auto-items {
+        display: flex;
+        gap: 10px;
+        margin-top: 8px;
+        flex-wrap: wrap;
+    }
+    .auto-item {
+        background: #fff;
+        border-radius: 20px;
+        padding: 3px 12px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #1a237e;
+        border: 1.5px solid #c5cae9;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .auto-item i { font-size: 0.75rem; }
+
+    /* Form card */
     .form-card {
         background: #fff;
         border-radius: 14px;
         border: none;
         box-shadow: 0 2px 12px rgba(26,35,126,0.07);
         overflow: hidden;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
     .form-card-header {
         padding: 14px 24px;
@@ -72,11 +118,9 @@
         font-weight: 700;
         color: #1a237e;
     }
-    .form-card-body {
-        padding: 24px;
-    }
+    .form-card-body { padding: 24px; }
 
-    /* Campos del formulario */
+    /* Campos */
     .form-label {
         font-size: 0.78rem;
         font-weight: 600;
@@ -85,6 +129,7 @@
         letter-spacing: 0.5px;
         margin-bottom: 6px;
     }
+    .required-star { color: #e53935; margin-left: 2px; }
     .form-control,
     .form-select {
         border-radius: 8px;
@@ -100,10 +145,6 @@
         box-shadow: 0 0 0 3px rgba(57,73,171,0.1);
         background-color: #fff;
     }
-    .form-control.is-invalid,
-    .form-select.is-invalid {
-        border-color: #e53935;
-    }
     .error-text {
         font-size: 0.78rem;
         color: #c62828;
@@ -113,7 +154,7 @@
         gap: 4px;
     }
 
-    /* Botones de acción */
+    /* Acciones */
     .form-actions {
         background: #fff;
         border-radius: 14px;
@@ -139,7 +180,7 @@
         transition: background 0.14s;
     }
     .btn-cancelar:hover { background: #e8eaf6; color: #1a237e; }
-    .btn-guardar {
+    .btn-crear {
         background: linear-gradient(135deg, #1a237e, #1565c0);
         border: none;
         border-radius: 9px;
@@ -154,78 +195,113 @@
         transition: opacity 0.15s, transform 0.15s;
         cursor: pointer;
     }
-    .btn-guardar:hover { opacity: 0.9; transform: translateY(-1px); color: #fff; }
+    .btn-crear:hover { opacity: 0.9; transform: translateY(-1px); color: #fff; }
 </style>
 
 <!-- ENCABEZADO -->
 <div class="page-header">
     <div class="page-header-left">
         <div class="header-label">Administración · Usuarios</div>
-        <h2><i class="bi bi-pencil-square me-2"></i>{{ titulo }}</h2>
+        <h2><i class="bi bi-person-plus me-2"></i>{{ titulo }}</h2>
     </div>
     <a href="{% url 'usuarios:lista_usuarios' %}" class="btn-volver">
         <i class="bi bi-arrow-left"></i>Volver
     </a>
 </div>
 
+<!-- AVISO GENERACIÓN AUTOMÁTICA -->
+<div class="auto-notice">
+    <div class="auto-notice-icon">
+        <i class="bi bi-magic"></i>
+    </div>
+    <div class="auto-notice-text">
+        <strong>Generación automática</strong> — El sistema creará y enviará al correo del usuario:
+        <div class="auto-items">
+            <span class="auto-item"><i class="bi bi-person-badge"></i>Nombre de usuario</span>
+            <span class="auto-item"><i class="bi bi-key"></i>Contraseña temporal</span>
+            <span class="auto-item"><i class="bi bi-envelope"></i>Correo de bienvenida</span>
+        </div>
+    </div>
+</div>
+
 <form method="post">
     {% csrf_token %}
 
-    <!-- Datos generales -->
+    <!-- Datos personales -->
     <div class="form-card">
         <div class="form-card-header">
             <span class="hdr-icon"><i class="bi bi-person"></i></span>
-            <span class="hdr-title">Datos generales</span>
+            <span class="hdr-title">Datos personales</span>
         </div>
         <div class="form-card-body">
             <div class="row g-3">
-                {% for field in form %}
                 <div class="col-md-6">
-                    <label class="form-label">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
+                    <label class="form-label">Nombre <span class="required-star">*</span></label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}
                     <div class="error-text">
-                        <i class="bi bi-exclamation-circle"></i>{{ field.errors|join:", " }}
+                        <i class="bi bi-exclamation-circle"></i>{{ form.first_name.errors|join:", " }}
                     </div>
                     {% endif %}
                 </div>
-                {% endfor %}
+                <div class="col-md-6">
+                    <label class="form-label">Apellido <span class="required-star">*</span></label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}
+                    <div class="error-text">
+                        <i class="bi bi-exclamation-circle"></i>{{ form.last_name.errors|join:", " }}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Teléfono</label>
+                    {{ form.telefono }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Fecha de nacimiento</label>
+                    {{ form.fecha_nacimiento }}
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Datos del perfil -->
-    {% if perfil_form %}
+    <!-- Cuenta -->
     <div class="form-card">
         <div class="form-card-header">
-            <span class="hdr-icon"><i class="bi bi-card-list"></i></span>
-            <span class="hdr-title">Datos del perfil</span>
+            <span class="hdr-icon"><i class="bi bi-shield-lock"></i></span>
+            <span class="hdr-title">Cuenta institucional</span>
         </div>
         <div class="form-card-body">
             <div class="row g-3">
-                {% for field in perfil_form %}
                 <div class="col-md-6">
-                    <label class="form-label">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
+                    <label class="form-label">Correo electrónico <span class="required-star">*</span></label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
                     <div class="error-text">
-                        <i class="bi bi-exclamation-circle"></i>{{ field.errors|join:", " }}
+                        <i class="bi bi-exclamation-circle"></i>{{ form.email.errors|join:", " }}
                     </div>
                     {% endif %}
                 </div>
-                {% endfor %}
+                <div class="col-md-6">
+                    <label class="form-label">Rol <span class="required-star">*</span></label>
+                    {{ form.rol }}
+                    {% if form.rol.errors %}
+                    <div class="error-text">
+                        <i class="bi bi-exclamation-circle"></i>{{ form.rol.errors|join:", " }}
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-    {% endif %}
 
     <!-- Acciones -->
     <div class="form-actions">
         <a href="{% url 'usuarios:lista_usuarios' %}" class="btn-cancelar">
             <i class="bi bi-x-lg"></i>Cancelar
         </a>
-        <button type="submit" class="btn-guardar">
-            <i class="bi bi-check-lg"></i>Guardar cambios
+        <button type="submit" class="btn-crear">
+            <i class="bi bi-person-check"></i>Crear usuario y enviar correo
         </button>
     </div>
 

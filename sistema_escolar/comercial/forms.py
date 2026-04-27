@@ -53,9 +53,14 @@ class CotizacionCoordinadorForm(forms.ModelForm):
 class DetalleCotizacionForm(forms.ModelForm):
     class Meta:
         model  = DetalleCotizacion
-        fields = ['producto', 'cantidad', 'precio_unitario']
+        fields = ['producto', 'cantidad']
         widgets = {
-            'producto':        forms.Select(attrs={'class': 'form-select'}),
-            'cantidad':        forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
-            'precio_unitario': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'producto': forms.Select(attrs={
+                'class': 'form-select',
+                'id':    'id_producto',
+            }),
+            'cantidad': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min':   '1',
+            }),
         }

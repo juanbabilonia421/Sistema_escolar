@@ -3,101 +3,352 @@
 {% block page_title %}Reporte de Asistencia{% endblock %}
 
 {% block contenido %}
-<div class="mb-4">
-    <h3 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Reporte de Asistencia</h3>
+
+<style>
+    /* Encabezado */
+    .reports-header {
+        background: linear-gradient(135deg, #1a237e 0%, #283593 60%, #1565c0 100%);
+        border-radius: 16px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(26,35,126,0.22);
+    }
+    .reports-header::before {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 200px; height: 200px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.06);
+        pointer-events: none;
+    }
+    .reports-header .header-label {
+        font-size: 0.72rem;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: #90caf9;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .reports-header h2 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #fff;
+        margin: 0 0 4px;
+        letter-spacing: -0.5px;
+    }
+    .reports-header .subtitle {
+        color: rgba(255,255,255,0.6);
+        font-size: 0.88rem;
+        margin: 0;
+    }
+
+    /* Filtro */
+    .filter-card {
+        background: #fff;
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(26,35,126,0.07);
+        padding: 20px 24px;
+        margin-bottom: 24px;
+    }
+    .filter-card .filter-title {
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #9fa8da;
+        font-weight: 700;
+        margin-bottom: 14px;
+    }
+    .filter-card .form-select {
+        border-radius: 8px;
+        border: 1.5px solid #e8eaf6;
+        font-size: 0.84rem;
+        color: #37474f;
+        background-color: #fafbff;
+    }
+    .filter-card .form-select:focus {
+        border-color: #3949ab;
+        box-shadow: 0 0 0 3px rgba(57,73,171,0.1);
+    }
+    .filter-card .form-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #546e7a;
+        margin-bottom: 5px;
+    }
+    .btn-filter {
+        background: linear-gradient(135deg, #1a237e, #1565c0);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.84rem;
+        font-weight: 600;
+        padding: 9px 24px;
+        transition: opacity 0.15s;
+        width: 100%;
+    }
+    .btn-filter:hover { opacity: 0.88; color: #fff; }
+
+    /* Tabla */
+    .table-card {
+        background: #fff;
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(26,35,126,0.07);
+        overflow: hidden;
+    }
+    .table-card-header {
+        padding: 14px 20px;
+        border-bottom: 1px solid #f0f2f5;
+        background: #fafbff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .table-card-header .title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #1a237e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .table-card-header .hdr-icon {
+        width: 28px; height: 28px;
+        border-radius: 7px;
+        background: #e0f2f1;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .table-card-header .hdr-icon i { font-size: 0.82rem; color: #00695c; }
+    .count-badge {
+        background: #e8eaf6;
+        color: #1a237e;
+        font-size: 0.74rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 3px 11px;
+    }
+
+    /* Tabla interna */
+    .table { margin: 0; }
+    .table thead th {
+        background: #fff;
+        border-bottom: 1.5px solid #f0f2f5;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #90a4ae;
+        padding: 10px 16px;
+    }
+    .table tbody td {
+        padding: 13px 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f5f6fa;
+        font-size: 0.875rem;
+        color: #37474f;
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .table tbody tr:hover td { background: #fafbff; }
+
+    /* Estudiante */
+    .student-cell { display: flex; align-items: center; gap: 10px; }
+    .student-avatar {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1a237e, #1565c0);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    .student-name { font-weight: 700; color: #1a237e; font-size: 0.875rem; }
+
+    /* Stats */
+    .stat-num { font-weight: 700; font-size: 0.875rem; }
+    .stat-num.ok   { color: #2e7d32; }
+    .stat-num.fail { color: #c62828; }
+    .stat-num.neutral { color: #546e7a; }
+
+    /* Barra de progreso custom */
+    .progress-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 140px;
+    }
+    .progress-bar-track {
+        flex: 1;
+        height: 7px;
+        background: #eceff1;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.4s ease;
+    }
+    .progress-bar-fill.high { background: #43a047; }
+    .progress-bar-fill.mid  { background: #fb8c00; }
+    .progress-bar-fill.low  { background: #e53935; }
+    .progress-pct {
+        font-size: 0.82rem;
+        font-weight: 700;
+        min-width: 38px;
+        text-align: right;
+    }
+    .progress-pct.high { color: #2e7d32; }
+    .progress-pct.mid  { color: #f57f17; }
+    .progress-pct.low  { color: #c62828; }
+
+    /* Estado badge */
+    .estado-badge {
+        font-size: 0.73rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 4px 11px;
+    }
+    .estado-regular  { background: #e8f5e9; color: #2e7d32; }
+    .estado-riesgo   { background: #fff8e1; color: #f57f17; }
+    .estado-critico  { background: #ffebee; color: #c62828; }
+    .estado-sin      { background: #eceff1; color: #607d8b; }
+
+    /* Empty */
+    .empty-state {
+        padding: 48px 24px;
+        text-align: center;
+        color: #90a4ae;
+    }
+    .empty-state i { font-size: 2.2rem; display: block; margin-bottom: 10px; color: #c5cae9; }
+    .empty-state p { font-size: 0.88rem; margin: 0; }
+
+    /* Placeholder sin asignación */
+    .no-selection {
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 12px rgba(26,35,126,0.07);
+        padding: 56px 32px;
+        text-align: center;
+        color: #90a4ae;
+    }
+    .no-selection i { font-size: 3rem; display: block; margin-bottom: 14px; color: #c5cae9; }
+    .no-selection p { font-size: 0.9rem; margin: 0; }
+</style>
+
+<!-- ENCABEZADO -->
+<div class="reports-header">
+    <div class="header-label">Panel analítico</div>
+    <h2><i class="bi bi-calendar2-check me-2"></i>Reporte de Asistencia</h2>
+    <p class="subtitle">Porcentaje de asistencia por estudiante según la asignación seleccionada</p>
 </div>
 
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-7">
-                <label class="form-label fw-semibold">Selecciona la asignación</label>
-                <select name="asignacion" class="form-select">
-                    <option value="">Elige una asignación...</option>
-                    {% for a in asignaciones %}
-                    {% if asignacion_pk_sel == a.pk|stringformat:"i" %}
-                    <option value="{{ a.pk }}" selected>
-                        {{ a.materia }} — {{ a.curso }} ({{ a.año_escolar }})
-                    </option>
-                    {% else %}
-                    <option value="{{ a.pk }}">
-                        {{ a.materia }} — {{ a.curso }} ({{ a.año_escolar }})
-                    </option>
-                    {% endif %}
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-bar-chart me-1"></i>Ver reporte
-                </button>
-            </div>
-        </form>
-    </div>
+<!-- FILTRO -->
+<div class="filter-card">
+    <div class="filter-title"><i class="bi bi-funnel me-1"></i>Seleccionar asignación</div>
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-9">
+            <label class="form-label">Asignación</label>
+            <select name="asignacion" class="form-select">
+                <option value="">Elige una asignación...</option>
+                {% for a in asignaciones %}
+                <option value="{{ a.pk }}" {% if asignacion_pk_sel == a.pk|stringformat:"i" %}selected{% endif %}>
+                    {{ a.materia }} — {{ a.curso }} ({{ a.año_escolar }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn-filter">
+                <i class="bi bi-bar-chart me-1"></i>Ver reporte
+            </button>
+        </div>
+    </form>
 </div>
 
+<!-- RESULTADO -->
 {% if asignacion %}
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white fw-semibold">
-        Resultado — {{ asignacion.materia }} | {{ asignacion.curso }}
+<div class="table-card">
+    <div class="table-card-header">
+        <div class="title">
+            <span class="hdr-icon"><i class="bi bi-calendar2-check"></i></span>
+            {{ asignacion.materia }} · {{ asignacion.curso }}
+        </div>
+        <span class="count-badge">{{ reporte|length }} estudiantes</span>
     </div>
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
                 <tr>
                     <th>Estudiante</th>
                     <th class="text-center">Total clases</th>
                     <th class="text-center">Presentes</th>
                     <th class="text-center">Ausentes</th>
-                    <th class="text-center">Asistencia</th>
+                    <th>Asistencia</th>
                     <th>Estado</th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in reporte %}
                 <tr>
-                    <td><strong>{{ r.estudiante.usuario.get_full_name }}</strong></td>
-                    <td class="text-center">{{ r.total }}</td>
-                    <td class="text-center text-success fw-semibold">{{ r.presentes }}</td>
-                    <td class="text-center text-danger fw-semibold">{{ r.ausentes }}</td>
-                    <td class="text-center" style="min-width:160px">
-                        <div class="d-flex align-items-center gap-2">
-
-                            <!-- Barra de progreso sin % en style -->
-                            <div class="progress flex-grow-1" style="height:8px">
-                                {% if r.porcentaje >= 80 %}
-                                <div class="progress-bar bg-success" role="progressbar" data-ancho="{{ r.porcentaje }}">
-                                </div>
-                                {% elif r.porcentaje >= 60 %}
-                                <div class="progress-bar bg-warning" role="progressbar" data-ancho="{{ r.porcentaje }}">
-                                </div>
-                                {% else %}
-                                <div class="progress-bar bg-danger" role="progressbar" data-ancho="{{ r.porcentaje }}">
-                                </div>
-                                {% endif %}
+                    <td>
+                        <div class="student-cell">
+                            <div class="student-avatar">
+                                {{ r.estudiante.usuario.first_name|first|upper }}{{ r.estudiante.usuario.last_name|first|upper }}
                             </div>
-
-                            <span class="small fw-semibold" style="min-width:40px">
-                                {{ r.porcentaje }}%
-                            </span>
+                            <span class="student-name">{{ r.estudiante.usuario.get_full_name }}</span>
                         </div>
+                    </td>
+                    <td class="text-center"><span class="stat-num neutral">{{ r.total }}</span></td>
+                    <td class="text-center"><span class="stat-num ok">{{ r.presentes }}</span></td>
+                    <td class="text-center"><span class="stat-num fail">{{ r.ausentes }}</span></td>
+                    <td>
+                        {% if r.porcentaje >= 80 %}
+                        <div class="progress-wrap">
+                            <div class="progress-bar-track">
+                                <div class="progress-bar-fill high" data-ancho="{{ r.porcentaje }}"></div>
+                            </div>
+                            <span class="progress-pct high">{{ r.porcentaje }}%</span>
+                        </div>
+                        {% elif r.porcentaje >= 60 %}
+                        <div class="progress-wrap">
+                            <div class="progress-bar-track">
+                                <div class="progress-bar-fill mid" data-ancho="{{ r.porcentaje }}"></div>
+                            </div>
+                            <span class="progress-pct mid">{{ r.porcentaje }}%</span>
+                        </div>
+                        {% else %}
+                        <div class="progress-wrap">
+                            <div class="progress-bar-track">
+                                <div class="progress-bar-fill low" data-ancho="{{ r.porcentaje }}"></div>
+                            </div>
+                            <span class="progress-pct low">{{ r.porcentaje }}%</span>
+                        </div>
+                        {% endif %}
                     </td>
                     <td>
                         {% if r.total == 0 %}
-                        <span class="badge bg-secondary">Sin datos</span>
+                        <span class="estado-badge estado-sin">Sin datos</span>
                         {% elif r.porcentaje >= 80 %}
-                        <span class="badge bg-success">Regular</span>
+                        <span class="estado-badge estado-regular">Regular</span>
                         {% elif r.porcentaje >= 60 %}
-                        <span class="badge bg-warning text-dark">En riesgo</span>
+                        <span class="estado-badge estado-riesgo">En riesgo</span>
                         {% else %}
-                        <span class="badge bg-danger">Crítico</span>
+                        <span class="estado-badge estado-critico">Crítico</span>
                         {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">
-                        No hay datos de asistencia para esta asignación.
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <p>No hay datos de asistencia para esta asignación.</p>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -105,14 +356,19 @@
         </table>
     </div>
 </div>
+
+{% else %}
+<div class="no-selection">
+    <i class="bi bi-calendar2-check"></i>
+    <p>Selecciona una asignación arriba para ver el reporte de asistencia.</p>
+</div>
 {% endif %}
 
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // Aplicar el ancho de la barra desde data-ancho en vez de style
-    document.querySelectorAll('.progress-bar[data-ancho]').forEach(function (bar) {
+    document.querySelectorAll('.progress-bar-fill[data-ancho]').forEach(function(bar) {
         bar.style.width = bar.getAttribute('data-ancho') + '%';
     });
 </script>

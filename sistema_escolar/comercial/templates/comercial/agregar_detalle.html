@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
-{% block titulo %}Agregar productos — Cotización #{{ cotizacion.id }}{% endblock %}
+{% block titulo %}Agregar productos{% endblock %}
+{% block page_title %}Agregar productos{% endblock %}
 
 {% block contenido %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0">Cotización #{{ cotizacion.id }} — Agregar productos</h3>
+    <h3 class="mb-0"><i class="bi bi-cart-plus me-2"></i>Agregar productos</h3>
     <a href="{% url 'comercial:detalle_cotizacion' cotizacion.pk %}" class="btn btn-success">
         <i class="bi bi-check-lg me-1"></i>Finalizar cotización
     </a>
@@ -20,15 +21,36 @@
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
-                    {% for field in form %}
+
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ field.label }}</label>
-                        {{ field }}
-                        {% if field.errors %}
-                        <div class="text-danger small mt-1">{{ field.errors }}</div>
+                        <label class="form-label fw-semibold">Producto</label>
+                        {{ form.producto }}
+                        {% if form.producto.errors %}
+                        <div class="text-danger small mt-1">{{ form.producto.errors }}</div>
                         {% endif %}
                     </div>
-                    {% endfor %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Precio unitario</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="text" id="precio_display" class="form-control"
+                                   placeholder="Selecciona un producto" readonly>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Cantidad</label>
+                        {{ form.cantidad }}
+                        {% if form.cantidad.errors %}
+                        <div class="text-danger small mt-1">{{ form.cantidad.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <small id="stock_info" class="text-muted"></small>
+                    </div>
+
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-plus-lg me-1"></i>Agregar
                     </button>
@@ -62,7 +84,8 @@
                             <td>${{ d.precio_unitario }}</td>
                             <td>${{ d.subtotal }}</td>
                             <td>
-                                <form method="post" action="{% url 'comercial:eliminar_detalle' d.pk %}">
+                                <form method="post"
+                                      action="{% url 'comercial:eliminar_detalle' d.pk %}">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-sm btn-outline-danger">
                                         <i class="bi bi-trash"></i>
@@ -93,4 +116,36 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const precios = {
+    {% for producto in form.producto.field.queryset %}
+    "{{ producto.pk }}": {
+        "precio": "{{ producto.precio }}",
+        "stock": {{ producto.stock }}
+    },
+    {% endfor %}
+};
+
+const selectProducto = document.getElementById('id_producto');
+const precioDisplay  = document.getElementById('precio_display');
+const stockInfo      = document.getElementById('stock_info');
+
+function actualizarPrecio() {
+    const pk = selectProducto.value;
+    if (pk && precios[pk]) {
+        precioDisplay.value = precios[pk].precio;
+        stockInfo.textContent = 'Stock disponible: ' + precios[pk].stock + ' unidades';
+        stockInfo.className = precios[pk].stock > 0 ? 'text-success small' : 'text-danger small';
+    } else {
+        precioDisplay.value = '';
+        stockInfo.textContent = '';
+    }
+}
+
+selectProducto.addEventListener('change', actualizarPrecio);
+actualizarPrecio();
+</script>
 {% endblock %}

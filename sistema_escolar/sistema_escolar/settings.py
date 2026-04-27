@@ -94,3 +94,12 @@ LOGIN_REDIRECT_URL = '/usuarios/dashboard/'
 LOGOUT_REDIRECT_URL = '/usuarios/login/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Configuración de correo
+EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST          = 'smtp.gmail.com'
+EMAIL_PORT          = 587
+EMAIL_USE_TLS       = True
+EMAIL_HOST_USER     = 'pruebasdjango77@gmail.com'      # ← tu correo de Gmail
+EMAIL_HOST_PASSWORD = 'mfhqtzjghxqnlbio'     # ← la clave de 16 caracteres
+DEFAULT_FROM_EMAIL  = 'pruebasdjango77@gmail.com'      # ← mismo correo

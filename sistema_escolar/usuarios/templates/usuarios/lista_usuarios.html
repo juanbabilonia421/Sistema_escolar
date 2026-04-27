@@ -3,88 +3,424 @@
 {% block page_title %}Usuarios del sistema{% endblock %}
 
 {% block contenido %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0"><i class="bi bi-people me-2"></i>Usuarios del sistema</h3>
-    <a href="{% url 'usuarios:crear_usuario' %}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i>Nuevo usuario
+<style>
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .page-header-left .header-label {
+        font-size: 0.7rem;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: #9fa8da;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+    .page-header-left h2 {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #1a237e;
+        margin: 0;
+        letter-spacing: -0.4px;
+    }
+    .btn-nuevo {
+        background: linear-gradient(135deg, #1a237e, #1565c0);
+        border: none;
+        border-radius: 9px;
+        color: #fff;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 10px 20px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 3px 10px rgba(26,35,126,0.22);
+        transition: opacity 0.15s, transform 0.15s;
+    }
+    .btn-nuevo:hover { opacity: 0.9; transform: translateY(-1px); color: #fff; }
+
+    .filter-card {
+        background: #fff;
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(26,35,126,0.07);
+        padding: 20px 24px;
+        margin-bottom: 20px;
+    }
+    .filter-title {
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #9fa8da;
+        font-weight: 700;
+        margin-bottom: 14px;
+    }
+    .filter-card .form-control,
+    .filter-card .form-select {
+        border-radius: 8px;
+        border: 1.5px solid #e8eaf6;
+        font-size: 0.84rem;
+        color: #37474f;
+        background-color: #fafbff;
+    }
+    .filter-card .form-control:focus,
+    .filter-card .form-select:focus {
+        border-color: #3949ab;
+        box-shadow: 0 0 0 3px rgba(57,73,171,0.1);
+    }
+    .filter-card .form-label {
+        font-size: 0.76rem;
+        font-weight: 600;
+        color: #546e7a;
+        margin-bottom: 5px;
+    }
+    .btn-filter {
+        background: linear-gradient(135deg, #1a237e, #1565c0);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.84rem;
+        font-weight: 600;
+        padding: 8px 18px;
+        transition: opacity 0.15s;
+        cursor: pointer;
+    }
+    .btn-filter:hover { opacity: 0.88; color: #fff; }
+    .btn-clear {
+        border-radius: 8px;
+        border: 1.5px solid #e8eaf6;
+        background: #fafbff;
+        color: #546e7a;
+        font-size: 0.84rem;
+        font-weight: 600;
+        padding: 8px 14px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: background 0.14s;
+    }
+    .btn-clear:hover { background: #e8eaf6; color: #1a237e; }
+
+    .result-info {
+        font-size: 0.8rem;
+        color: #90a4ae;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .result-info strong { color: #1a237e; }
+
+    .table-card {
+        background: #fff;
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(26,35,126,0.07);
+        overflow: hidden;
+    }
+    .table-card-header {
+        padding: 14px 20px;
+        border-bottom: 1px solid #f0f2f5;
+        background: #fafbff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .table-card-header .title {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #1a237e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .hdr-icon {
+        width: 28px; height: 28px;
+        border-radius: 7px;
+        background: #e8eaf6;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .hdr-icon i { font-size: 0.82rem; color: #1a237e; }
+    .count-badge {
+        background: #e8eaf6;
+        color: #1a237e;
+        font-size: 0.74rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 3px 11px;
+    }
+
+    .table { margin: 0; }
+    .table thead th {
+        background: #fff;
+        border-bottom: 1.5px solid #f0f2f5;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #90a4ae;
+        padding: 10px 16px;
+    }
+    .table tbody td {
+        padding: 12px 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f5f6fa;
+        font-size: 0.875rem;
+        color: #37474f;
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .table tbody tr:hover td { background: #fafbff; }
+
+    .user-cell { display: flex; align-items: center; gap: 10px; }
+    .user-avatar {
+        width: 34px; height: 34px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    .av-coordinador { background: linear-gradient(135deg, #c62828, #e53935); }
+    .av-profesor    { background: linear-gradient(135deg, #1a237e, #1565c0); }
+    .av-estudiante  { background: linear-gradient(135deg, #2e7d32, #43a047); }
+    .av-acudiente   { background: linear-gradient(135deg, #f57f17, #fb8c00); }
+    .user-name { font-weight: 700; color: #1a237e; font-size: 0.875rem; }
+    .user-username { font-size: 0.75rem; color: #90a4ae; font-family: monospace; }
+
+    .email-text { font-size: 0.82rem; color: #546e7a; }
+
+    .rol-badge {
+        font-size: 0.73rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 4px 11px;
+    }
+    .rol-coordinador { background: #ffebee; color: #c62828; }
+    .rol-profesor    { background: #e8eaf6; color: #1a237e; }
+    .rol-estudiante  { background: #e8f5e9; color: #2e7d32; }
+    .rol-acudiente   { background: #fff8e1; color: #f57f17; }
+
+    .estado-badge {
+        font-size: 0.73rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 4px 11px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .estado-activo     { background: #e8f5e9; color: #2e7d32; }
+    .estado-cambio     { background: #fff8e1; color: #f57f17; }
+    .estado-suspendido { background: #ffebee; color: #c62828; }
+    .estado-pendiente  { background: #eceff1; color: #607d8b; }
+
+    .actions-wrap { display: flex; gap: 5px; align-items: center; }
+    .action-btn {
+        width: 30px; height: 30px;
+        border-radius: 7px;
+        border: 1.5px solid #e8eaf6;
+        background: #fafbff;
+        display: inline-flex; align-items: center; justify-content: center;
+        text-decoration: none;
+        transition: background 0.13s, border-color 0.13s;
+        font-size: 0.78rem;
+        cursor: pointer;
+        color: #546e7a;
+    }
+    .action-btn.view  { color: #1565c0; }
+    .action-btn.edit  { color: #f57f17; }
+    .action-btn.del   { color: #c62828; }
+    .action-btn.on    { color: #2e7d32; }
+    .action-btn.off   { color: #607d8b; }
+    .action-btn.view:hover { background: #e3f2fd; border-color: #1565c0; }
+    .action-btn.edit:hover { background: #fff8e1; border-color: #f57f17; }
+    .action-btn.del:hover  { background: #ffebee; border-color: #c62828; }
+    .action-btn.on:hover   { background: #e8f5e9; border-color: #2e7d32; }
+    .action-btn.off:hover  { background: #eceff1; border-color: #607d8b; }
+
+    .empty-state {
+        padding: 52px 24px;
+        text-align: center;
+        color: #90a4ae;
+    }
+    .empty-state i { font-size: 2.4rem; display: block; margin-bottom: 10px; color: #c5cae9; }
+    .empty-state p { font-size: 0.88rem; margin: 0; }
+
+    /* Modal */
+    @keyframes modalIn {
+        from { opacity: 0; transform: scale(0.94) translateY(10px); }
+        to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9998;
+        background: rgba(26,35,126,0.18);
+        backdrop-filter: blur(3px);
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 16px 48px rgba(26,35,126,0.22);
+        width: 100%;
+        max-width: 400px;
+        margin: 24px;
+        overflow: hidden;
+        animation: modalIn 0.25s ease;
+    }
+    .modal-top {
+        padding: 24px 24px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .modal-icon {
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        font-size: 1.2rem;
+    }
+    .modal-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: #1a237e;
+        margin: 0 0 3px;
+    }
+    .modal-subtitle {
+        font-size: 0.82rem;
+        color: #90a4ae;
+        margin: 0;
+    }
+    .modal-body {
+        padding: 0 24px 20px;
+        font-size: 0.875rem;
+        color: #546e7a;
+        line-height: 1.55;
+    }
+    .modal-footer {
+        padding: 16px 24px 24px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        border-top: 1px solid #f0f2f5;
+    }
+    .modal-btn-cancel {
+        border-radius: 9px;
+        border: 1.5px solid #e8eaf6;
+        background: #fafbff;
+        color: #546e7a;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 9px 18px;
+        cursor: pointer;
+        transition: background 0.14s;
+    }
+    .modal-btn-cancel:hover { background: #e8eaf6; color: #1a237e; }
+    .modal-btn-confirm {
+        border: none;
+        border-radius: 9px;
+        color: #fff;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 9px 20px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: opacity 0.15s;
+    }
+    .modal-btn-confirm:hover { opacity: 0.88; }
+</style>
+
+<!-- ENCABEZADO -->
+<div class="page-header">
+    <div class="page-header-left">
+        <div class="header-label">Administración</div>
+        <h2><i class="bi bi-people me-2"></i>Usuarios del sistema</h2>
+    </div>
+    <a href="{% url 'usuarios:crear_usuario' %}" class="btn-nuevo">
+        <i class="bi bi-plus-lg"></i>Nuevo usuario
     </a>
 </div>
 
-<!-- BARRA DE FILTROS -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
-
-            <div class="col-md-5">
-                <label class="form-label fw-semibold small text-muted">
-                    <i class="bi bi-search me-1"></i>Buscar
-                </label>
-                <input type="text" name="q" value="{{ busqueda }}" class="form-control"
-                    placeholder="Nombre, usuario o email...">
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label fw-semibold small text-muted">
-                    <i class="bi bi-person-badge me-1"></i>Rol
-                </label>
-                <select name="rol" class="form-select">
-                    <option value="">Todos los roles</option>
-                    {% for value, label in roles %}
-                        {% if rol == value %}
-                        <option value="{{ value }}" selected>{{ label }}</option>
-                        {% else %}
-                        <option value="{{ value }}">{{ label }}</option>
-                        {% endif %}
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="col-md-2">
-                <label class="form-label fw-semibold small text-muted">
-                    <i class="bi bi-toggle-on me-1"></i>Estado
-                </label>
-                <select name="estado" class="form-select">
-                    <option value="">Todos</option>
-                    {% if estado == 'activo' %}
-                    <option value="activo" selected>Activo</option>
-                    <option value="inactivo">Inactivo</option>
-                    {% elif estado == 'inactivo' %}
-                    <option value="activo">Activo</option>
-                    <option value="inactivo" selected>Inactivo</option>
-                    {% else %}
-                    <option value="activo">Activo</option>
-                    <option value="inactivo">Inactivo</option>
-                    {% endif %}
-                </select>
-            </div>
-
-            <div class="col-md-2 d-flex gap-2">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-funnel me-1"></i>Filtrar
-                </button>
-                <a href="{% url 'usuarios:lista_usuarios' %}" class="btn btn-outline-secondary" title="Limpiar filtros">
-                    <i class="bi bi-x-lg"></i>
-                </a>
-            </div>
-
-        </form>
-    </div>
+<!-- FILTROS -->
+<div class="filter-card">
+    <div class="filter-title"><i class="bi bi-funnel me-1"></i>Filtros</div>
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label"><i class="bi bi-search me-1"></i>Buscar</label>
+            <input type="text" name="q" value="{{ busqueda }}"
+                   class="form-control" placeholder="Nombre, usuario o email...">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Rol</label>
+            <select name="rol" class="form-select">
+                <option value="">Todos los roles</option>
+                {% for value, label in roles %}
+                <option value="{{ value }}" {% if rol == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Estado</label>
+            <select name="estado" class="form-select">
+                <option value="">Todos los estados</option>
+                {% for value, label in estados %}
+                <option value="{{ value }}" {% if estado == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 d-flex gap-2">
+            <button type="submit" class="btn-filter flex-grow-1">
+                <i class="bi bi-funnel me-1"></i>Filtrar
+            </button>
+            <a href="{% url 'usuarios:lista_usuarios' %}" class="btn-clear">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        </div>
+    </form>
 </div>
 
+<!-- INFO RESULTADO -->
 {% if busqueda or rol or estado %}
-<p class="text-muted small mb-2">
-    <i class="bi bi-info-circle me-1"></i>
-    {{ usuarios.count }} resultado{{ usuarios.count|pluralize }} encontrado{{ usuarios.count|pluralize }}
-    {% if busqueda %} para "<strong>{{ busqueda }}</strong>"{% endif %}
-</p>
+<div class="result-info">
+    <i class="bi bi-info-circle"></i>
+    <span>
+        <strong>{{ usuarios.count }}</strong>
+        resultado{{ usuarios.count|pluralize }} encontrado{{ usuarios.count|pluralize }}
+        {% if busqueda %} para "<strong>{{ busqueda }}</strong>"{% endif %}
+    </span>
+</div>
 {% endif %}
 
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
+<!-- TABLA -->
+<div class="table-card">
+    <div class="table-card-header">
+        <div class="title">
+            <span class="hdr-icon"><i class="bi bi-people"></i></span>
+            Listado de usuarios
+        </div>
+        <span class="count-badge">{{ usuarios.count }} registros</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
                 <tr>
-                    <th>Nombre completo</th>
                     <th>Usuario</th>
                     <th>Email</th>
                     <th>Rol</th>
@@ -95,84 +431,91 @@
             <tbody>
                 {% for u in usuarios %}
                 <tr>
-                    <td><strong>{{ u.get_full_name }}</strong></td>
-                    <td><code>{{ u.username }}</code></td>
-                    <td>{{ u.email|default:"—" }}</td>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar
+                                {% if u.rol == 'coordinador' %}av-coordinador
+                                {% elif u.rol == 'profesor' %}av-profesor
+                                {% elif u.rol == 'estudiante' %}av-estudiante
+                                {% else %}av-acudiente{% endif %}">
+                                {{ u.first_name|first|upper }}{{ u.last_name|first|upper }}
+                            </div>
+                            <div>
+                                <div class="user-name">{{ u.get_full_name }}</div>
+                                <div class="user-username">{{ u.username }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="email-text">{{ u.email|default:"—" }}</span></td>
                     <td>
                         {% if u.rol == 'coordinador' %}
-                            <span class="badge bg-danger">Coordinador</span>
+                        <span class="rol-badge rol-coordinador">Coordinador</span>
                         {% elif u.rol == 'profesor' %}
-                            <span class="badge bg-primary">Profesor</span>
+                        <span class="rol-badge rol-profesor">Profesor</span>
                         {% elif u.rol == 'estudiante' %}
-                            <span class="badge bg-success">Estudiante</span>
+                        <span class="rol-badge rol-estudiante">Estudiante</span>
                         {% else %}
-                            <span class="badge bg-warning text-dark">Acudiente</span>
+                        <span class="rol-badge rol-acudiente">Acudiente</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if u.is_active %}
-                            <span class="badge bg-success">Activo</span>
+                        {% if u.estado == 'activo' %}
+                        <span class="estado-badge estado-activo">
+                            <i class="bi bi-check-circle-fill"></i>Activo
+                        </span>
+                        {% elif u.estado == 'cambio_requerido' %}
+                        <span class="estado-badge estado-cambio">
+                            <i class="bi bi-key-fill"></i>Cambio requerido
+                        </span>
+                        {% elif u.estado == 'suspendido' %}
+                        <span class="estado-badge estado-suspendido">
+                            <i class="bi bi-slash-circle-fill"></i>Suspendido
+                        </span>
                         {% else %}
-                            <span class="badge bg-secondary">Inactivo</span>
+                        <span class="estado-badge estado-pendiente">
+                            <i class="bi bi-clock-fill"></i>Pendiente
+                        </span>
                         {% endif %}
                     </td>
                     <td>
-                        <div class="d-flex gap-1">
-
-                            <!-- Ver -->
+                        <div class="actions-wrap">
                             <a href="{% url 'usuarios:ver_usuario' u.pk %}"
-                               class="btn btn-sm btn-outline-info" title="Ver detalle">
+                               class="action-btn view" title="Ver detalle">
                                 <i class="bi bi-eye"></i>
                             </a>
-
                             {% if not u.is_superuser %}
-
-                            <!-- Editar -->
                             <a href="{% url 'usuarios:editar_usuario' u.pk %}"
-                               class="btn btn-sm btn-outline-warning" title="Editar">
+                               class="action-btn edit" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </a>
-
-                            <!-- Eliminar -->
                             <a href="{% url 'usuarios:eliminar_usuario' u.pk %}"
-                               class="btn btn-sm btn-outline-danger" title="Eliminar">
+                               class="action-btn del" title="Eliminar">
                                 <i class="bi bi-trash"></i>
                             </a>
-
                             {% endif %}
-
-                            <!-- Activar / Desactivar -->
                             {% if not u.is_superuser and u != user %}
-                            <form method="post"
-                                  action="{% url 'usuarios:toggle_usuario' u.pk %}"
-                                  style="display:inline;">
-                                {% csrf_token %}
-                                {% if u.is_active %}
-                                    <button type="submit"
-                                            class="btn btn-sm btn-outline-secondary"
-                                            title="Desactivar"
-                                            onclick="return confirm('¿Desactivar a {{ u.get_full_name }}?')">
-                                        <i class="bi bi-person-x"></i>
-                                    </button>
-                                {% else %}
-                                    <button type="submit"
-                                            class="btn btn-sm btn-outline-success"
-                                            title="Activar"
-                                            onclick="return confirm('¿Activar a {{ u.get_full_name }}?')">
-                                        <i class="bi bi-person-check"></i>
-                                    </button>
-                                {% endif %}
-                            </form>
+                            {% if u.is_active %}
+                            <button type="button" class="action-btn off" title="Suspender"
+                                    onclick="abrirModal('{{ u.pk }}', '{{ u.get_full_name }}', 'suspender')">
+                                <i class="bi bi-person-x"></i>
+                            </button>
+                            {% else %}
+                            <button type="button" class="action-btn on" title="Activar"
+                                    onclick="abrirModal('{{ u.pk }}', '{{ u.get_full_name }}', 'activar')">
+                                <i class="bi bi-person-check"></i>
+                            </button>
                             {% endif %}
-
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">
-                        <i class="bi bi-search me-2"></i>
-                        No se encontraron usuarios con los filtros aplicados.
+                    <td colspan="5">
+                        <div class="empty-state">
+                            <i class="bi bi-people"></i>
+                            <p>No se encontraron usuarios con los filtros aplicados.</p>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -180,4 +523,71 @@
         </table>
     </div>
 </div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalToggle">
+    <div class="modal-box">
+        <div class="modal-top">
+            <div class="modal-icon" id="modalIcon"></div>
+            <div>
+                <p class="modal-title" id="modalTitle"></p>
+                <p class="modal-subtitle" id="modalSubtitle"></p>
+            </div>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-footer">
+            <button class="modal-btn-cancel" onclick="cerrarModal()">Cancelar</button>
+            <form id="modalForm" method="post" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="modal-btn-confirm" id="modalConfirm"></button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function abrirModal(pk, nombre, accion) {
+        var overlay  = document.getElementById('modalToggle');
+        var form     = document.getElementById('modalForm');
+        var icon     = document.getElementById('modalIcon');
+        var title    = document.getElementById('modalTitle');
+        var subtitle = document.getElementById('modalSubtitle');
+        var body     = document.getElementById('modalBody');
+        var confirm  = document.getElementById('modalConfirm');
+
+        form.action = '/usuarios/' + pk + '/toggle/';
+        subtitle.textContent = nombre;
+
+        if (accion === 'suspender') {
+            icon.style.background = '#ffebee';
+            icon.innerHTML  = '<i class="bi bi-slash-circle-fill" style="color:#c62828;font-size:1.2rem;"></i>';
+            title.textContent = 'Suspender usuario';
+            body.textContent  = 'El usuario no podrá iniciar sesión mientras esté suspendido. Podrás reactivarlo en cualquier momento.';
+            confirm.style.background = 'linear-gradient(135deg,#c62828,#e53935)';
+            confirm.style.boxShadow  = '0 3px 10px rgba(198,40,40,0.28)';
+            confirm.innerHTML = '<i class="bi bi-slash-circle"></i>Suspender';
+        } else {
+            icon.style.background = '#e8f5e9';
+            icon.innerHTML  = '<i class="bi bi-person-check-fill" style="color:#2e7d32;font-size:1.2rem;"></i>';
+            title.textContent = 'Activar usuario';
+            body.textContent  = 'El usuario podrá volver a iniciar sesión normalmente en el sistema.';
+            confirm.style.background = 'linear-gradient(135deg,#2e7d32,#43a047)';
+            confirm.style.boxShadow  = '0 3px 10px rgba(46,125,50,0.28)';
+            confirm.innerHTML = '<i class="bi bi-person-check"></i>Activar';
+        }
+
+        overlay.classList.add('show');
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalToggle').classList.remove('show');
+    }
+
+    document.getElementById('modalToggle').addEventListener('click', function(e) {
+        if (e.target === this) cerrarModal();
+    });
+</script>
 {% endblock %}

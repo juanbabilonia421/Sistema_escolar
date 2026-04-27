@@ -7,14 +7,18 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db import models
 from django.db.models import Avg
+from django.core.mail import send_mail
+from django.conf import settings as django_settings
+from datetime import timedelta
+
 from .models import Usuario, Estudiante, Profesor, Acudiente
-from .forms  import UsuarioForm, EstudianteForm, ProfesorForm, AcudienteForm
-from .decorators import solo_coordinador
+from .forms import UsuarioForm, UsuarioInstitucionalForm, EstudianteForm, ProfesorForm, AcudienteForm, CambiarPasswordForm
+from .decorators import solo_coordinador, requiere_password_cambiado
 
 
-# ─────────────────────────────────────────
+# ─────────────────────────
 # AUTENTICACIÓN
-# ─────────────────────────────────────────
+# ─────────────────────────
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -23,16 +27,55 @@ def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
+        user     = authenticate(request, username=username, password=password)
 
         if user is not None:
+
+            # Verificar si la contraseña temporal expiró
+            if user.must_change_password and not user.password_temporal_vigente():
+                user.estado    = Usuario.Estado.SUSPENDIDO
+                user.is_active = False
+                user.save()
+                messages.error(
+                    request,
+                    'Tu contraseña temporal expiró. Contacta al coordinador.'
+                )
+                return render(request, 'usuarios/login.html')
+
+            # Verificar si está suspendido
+            if user.estado == Usuario.Estado.SUSPENDIDO:
+                messages.error(
+                    request,
+                    'Tu cuenta está suspendida. Contacta al coordinador.'
+                )
+                return render(request, 'usuarios/login.html')
+
+            # Verificar si está pendiente
+            if user.estado == Usuario.Estado.PENDIENTE:
+                messages.error(
+                    request,
+                    'Tu cuenta está pendiente de activación. Contacta al coordinador.'
+                )
+                return render(request, 'usuarios/login.html')
+
             login(request, user)
-            next_url = request.POST.get('next') or request.GET.get('next')
-            if next_url:
-                return redirect(next_url)
+
+            # Superusuario y coordinador nunca son bloqueados por estado
+            if user.is_superuser or user.es_coordinador():
+                return redirect('usuarios:dashboard')
+
+            # Si debe cambiar contraseña redirigir obligatoriamente
+            if user.must_change_password:
+                messages.warning(
+                    request,
+                    'Debes cambiar tu contraseña temporal antes de continuar.'
+                )
+                return redirect('usuarios:cambiar_password')
+
             return redirect('usuarios:dashboard')
 
-        return render(request, 'usuarios/login.html', {'error': True})
+        else:
+            messages.error(request, 'Usuario o contraseña incorrectos.')
 
     return render(request, 'usuarios/login.html')
 
@@ -42,15 +85,20 @@ def logout_view(request):
     return redirect('usuarios:login')
 
 
+# ─────────────────────────
+# DASHBOARD
+# ─────────────────────────
+
 @login_required
+@requiere_password_cambiado
 def dashboard_view(request):
+    from academico.models import Curso, Asignacion, Nota, Asistencia, Actividad
+    from comercial.models import Cotizacion
+
     user    = request.user
     context = {'today': timezone.now()}
 
     if user.es_coordinador():
-        from academico.models import Curso, Asignacion, Nota, Asistencia, Actividad
-        from comercial.models import Cotizacion
-
         cursos_data = []
         for curso in Curso.objects.all():
             cursos_data.append({
@@ -58,7 +106,6 @@ def dashboard_view(request):
                 'total_estudiantes': curso.estudiantes.count(),
                 'total_materias':    curso.asignaciones.values('materia').distinct().count(),
             })
-
         context.update({
             'total_cursos':       Curso.objects.count(),
             'total_profesores':   Profesor.objects.count(),
@@ -72,8 +119,6 @@ def dashboard_view(request):
         })
 
     elif user.es_profesor():
-        from academico.models import Asignacion, Actividad, Asistencia
-
         profesor = Profesor.objects.filter(usuario=user).first()
         if profesor:
             asignaciones = Asignacion.objects.filter(
@@ -123,8 +168,6 @@ def dashboard_view(request):
             })
 
     elif user.es_estudiante():
-        from academico.models import Nota, Actividad, Asistencia, Asignacion
-
         estudiante = Estudiante.objects.filter(usuario=user).first()
         if estudiante:
             notas = Nota.objects.filter(
@@ -138,10 +181,8 @@ def dashboard_view(request):
             promedio = notas.aggregate(Avg('valor'))['valor__avg']
             promedio = round(promedio, 1) if promedio else 0
 
-            total_asistencias = Asistencia.objects.filter(
-                estudiante=estudiante
-            ).count()
-            presentes = Asistencia.objects.filter(
+            total_asistencias = Asistencia.objects.filter(estudiante=estudiante).count()
+            presentes         = Asistencia.objects.filter(
                 estudiante=estudiante, presente=True
             ).count()
             pct_asistencia = round((presentes / total_asistencias * 100)) if total_asistencias > 0 else 0
@@ -172,7 +213,6 @@ def dashboard_view(request):
 
     elif user.es_acudiente():
         from comercial.models import Cotizacion
-        from academico.models import Nota, Actividad, Asistencia
 
         acudiente = Acudiente.objects.filter(usuario=user).first()
         if acudiente:
@@ -238,9 +278,172 @@ def dashboard_view(request):
     return render(request, 'usuarios/dashboard.html', context)
 
 
-# ─────────────────────────────────────────
-# GESTIÓN DE USUARIOS (solo coordinador)
-# ─────────────────────────────────────────
+# ─────────────────────────
+# CAMBIAR CONTRASEÑA
+# ─────────────────────────
+
+@login_required
+def cambiar_password_view(request):
+    if not request.user.must_change_password:
+        return redirect('usuarios:dashboard')
+
+    form = CambiarPasswordForm(request.POST or None)
+
+    if form.is_valid():
+        nueva_password = form.cleaned_data['password1']
+        user           = request.user
+
+        user.set_password(nueva_password)
+        user.must_change_password = False
+        user.estado               = Usuario.Estado.ACTIVO
+        user.password_temp_expira = None
+        user.is_active            = True
+        user.save()
+
+        from django.contrib.auth import update_session_auth_hash
+        update_session_auth_hash(request, user)
+
+        messages.success(
+            request,
+            '¡Contraseña actualizada correctamente! Bienvenido al sistema.'
+        )
+        return redirect('usuarios:dashboard')
+
+    return render(request, 'usuarios/cambiar_password.html', {
+        'form': form,
+    })
+
+
+# ─────────────────────────
+# REGISTROS PÚBLICOS
+# ─────────────────────────
+
+def registro_view(request):
+    return render(request, 'usuarios/registro.html')
+
+
+def registro_estudiante_view(request):
+    if request.user.is_authenticated:
+        return redirect('usuarios:dashboard')
+
+    usuario_form = UsuarioForm(request.POST or None)
+    form_est     = EstudianteForm(request.POST or None)
+
+    if request.method == 'GET':
+        usuario_form.fields['rol'].initial  = Usuario.Rol.ESTUDIANTE
+        usuario_form.fields['rol'].disabled = True
+
+    if request.method == 'POST':
+        usuario_form = UsuarioForm(request.POST)
+        usuario_form.fields['rol'].required = False
+        form_est = EstudianteForm(request.POST)
+
+        if usuario_form.is_valid() and form_est.is_valid():
+            usuario           = usuario_form.save(commit=False)
+            usuario.rol       = Usuario.Rol.ESTUDIANTE
+            usuario.is_active = False
+            usuario.estado    = Usuario.Estado.PENDIENTE
+            usuario.save()
+
+            perfil         = form_est.save(commit=False)
+            perfil.usuario = usuario
+            perfil.save()
+
+            messages.success(
+                request,
+                'Cuenta creada. Espera a que el coordinador la active.'
+            )
+            return redirect('usuarios:login')
+
+    return render(request, 'usuarios/registro_estudiante.html', {
+        'usuario_form': usuario_form,
+        'form_est':     form_est,
+    })
+
+
+def registro_acudiente_view(request):
+    if request.user.is_authenticated:
+        return redirect('usuarios:dashboard')
+
+    usuario_form = UsuarioForm(request.POST or None)
+    form_acu     = AcudienteForm(request.POST or None)
+
+    if request.method == 'GET':
+        usuario_form.fields['rol'].initial  = Usuario.Rol.ACUDIENTE
+        usuario_form.fields['rol'].disabled = True
+
+    if request.method == 'POST':
+        usuario_form = UsuarioForm(request.POST)
+        usuario_form.fields['rol'].required = False
+        form_acu = AcudienteForm(request.POST)
+
+        if usuario_form.is_valid() and form_acu.is_valid():
+            usuario           = usuario_form.save(commit=False)
+            usuario.rol       = Usuario.Rol.ACUDIENTE
+            usuario.is_active = False
+            usuario.estado    = Usuario.Estado.PENDIENTE
+            usuario.save()
+
+            perfil         = form_acu.save(commit=False)
+            perfil.usuario = usuario
+            perfil.save()
+            form_acu.save_m2m()
+
+            messages.success(
+                request,
+                'Cuenta creada correctamente. Espera a que el coordinador la active.'
+            )
+            return redirect('usuarios:login')
+
+    return render(request, 'usuarios/registro_acudiente.html', {
+        'usuario_form': usuario_form,
+        'form_acu':     form_acu,
+    })
+
+
+# ─────────────────────────
+# VERIFICACIÓN CÓDIGO
+# ─────────────────────────
+
+def verificar_codigo_view(request, pk):
+    usuario = get_object_or_404(Usuario, pk=pk)
+
+    if usuario.is_active:
+        messages.info(request, 'Tu cuenta ya está activa.')
+        return redirect('usuarios:login')
+
+    if request.method == 'POST':
+        from .models import CodigoActivacion
+        codigo_ingresado = request.POST.get('codigo', '').strip()
+
+        try:
+            codigo_obj = CodigoActivacion.objects.get(usuario=usuario)
+
+            if not codigo_obj.esta_vigente():
+                messages.error(request, 'El código expiró. Contacta al coordinador.')
+                return redirect('usuarios:login')
+
+            if codigo_ingresado == codigo_obj.codigo:
+                usuario.is_active = True
+                usuario.save()
+                codigo_obj.delete()
+                messages.success(request, '¡Cuenta activada! Ya puedes iniciar sesión.')
+                return redirect('usuarios:login')
+            else:
+                messages.error(request, 'Código incorrecto. Intenta de nuevo.')
+
+        except CodigoActivacion.DoesNotExist:
+            messages.error(request, 'No hay código activo. Contacta al coordinador.')
+            return redirect('usuarios:login')
+
+    return render(request, 'usuarios/verificar_codigo.html', {
+        'usuario': usuario,
+    })
+
+
+# ─────────────────────────
+# CRUD USUARIOS
+# ─────────────────────────
 
 @login_required
 @solo_coordinador
@@ -260,10 +463,8 @@ def lista_usuarios(request):
         )
     if rol:
         usuarios = usuarios.filter(rol=rol)
-    if estado == 'activo':
-        usuarios = usuarios.filter(is_active=True)
-    elif estado == 'inactivo':
-        usuarios = usuarios.filter(is_active=False)
+    if estado:
+        usuarios = usuarios.filter(estado=estado)
 
     return render(request, 'usuarios/lista_usuarios.html', {
         'usuarios': usuarios,
@@ -271,16 +472,68 @@ def lista_usuarios(request):
         'rol':      rol,
         'estado':   estado,
         'roles':    Usuario.Rol.choices,
+        'estados':  Usuario.Estado.choices,
     })
 
 
 @login_required
 @solo_coordinador
 def crear_usuario(request):
-    form = UsuarioForm(request.POST or None)
+    form = UsuarioInstitucionalForm(request.POST or None)
+
     if form.is_valid():
-        usuario = form.save()
-        messages.success(request, f'Usuario {usuario.username} creado.')
+        usuario  = form.save(commit=False)
+        username = Usuario.generar_username(usuario.first_name, usuario.last_name)
+        password = Usuario.generar_password_temporal()
+
+        usuario.username  = username
+        usuario.is_active = True
+
+        # Coordinador queda activo directo, los demás deben cambiar contraseña
+        if usuario.rol == Usuario.Rol.COORDINADOR:
+            usuario.estado               = Usuario.Estado.ACTIVO
+            usuario.must_change_password = False
+        else:
+            usuario.estado               = Usuario.Estado.CAMBIO_REQUERIDO
+            usuario.must_change_password = True
+            usuario.password_temp_expira = timezone.now() + timedelta(hours=48)
+
+        usuario.set_password(password)
+        usuario.save()
+
+        try:
+            send_mail(
+                subject='Bienvenido al Sistema Escolar — Tus credenciales de acceso',
+                message=f'''Hola {usuario.get_full_name()},
+
+Tu cuenta ha sido creada en el Sistema Escolar.
+
+Tus credenciales de acceso son:
+
+  Usuario:     {username}
+  Contraseña:  {password}
+
+{"Esta contraseña es temporal y expira en 48 horas. Al iniciar sesión por primera vez deberás cambiarla." if usuario.rol != Usuario.Rol.COORDINADOR else ""}
+
+Accede aquí: http://127.0.0.1:8000/usuarios/login/
+
+Si tienes algún problema contacta al coordinador.
+
+Saludos,
+Sistema Escolar''',
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[usuario.email],
+                fail_silently=False,
+            )
+            messages.success(
+                request,
+                f'Usuario {username} creado. Credenciales enviadas a {usuario.email}.'
+            )
+        except Exception:
+            messages.warning(
+                request,
+                f'Usuario {username} creado con contraseña: {password} — No se pudo enviar el correo.'
+            )
 
         if usuario.rol == Usuario.Rol.ESTUDIANTE:
             return redirect('usuarios:crear_perfil_estudiante', pk=usuario.pk)
@@ -291,87 +544,10 @@ def crear_usuario(request):
         else:
             return redirect('usuarios:lista_usuarios')
 
-    return render(request, 'usuarios/form_usuario.html', {
+    return render(request, 'usuarios/form_crear_usuario_institucional.html', {
         'form':   form,
         'titulo': 'Nuevo usuario',
     })
-
-
-@login_required
-@solo_coordinador
-def crear_perfil_estudiante(request, pk):
-    usuario = get_object_or_404(Usuario, pk=pk)
-    form    = EstudianteForm(request.POST or None)
-    if form.is_valid():
-        perfil         = form.save(commit=False)
-        perfil.usuario = usuario
-        perfil.save()
-        messages.success(request, 'Perfil de estudiante creado.')
-        return redirect('usuarios:lista_usuarios')
-    return render(request, 'usuarios/form_perfil.html', {
-        'form':    form,
-        'titulo':  f'Perfil estudiante: {usuario.get_full_name()}',
-        'usuario': usuario,
-    })
-
-
-@login_required
-@solo_coordinador
-def crear_perfil_profesor(request, pk):
-    usuario = get_object_or_404(Usuario, pk=pk)
-    form    = ProfesorForm(request.POST or None)
-    if form.is_valid():
-        perfil         = form.save(commit=False)
-        perfil.usuario = usuario
-        perfil.save()
-        messages.success(request, 'Perfil de profesor creado.')
-        return redirect('usuarios:lista_usuarios')
-    return render(request, 'usuarios/form_perfil.html', {
-        'form':    form,
-        'titulo':  f'Perfil profesor: {usuario.get_full_name()}',
-        'usuario': usuario,
-    })
-
-
-@login_required
-@solo_coordinador
-def crear_perfil_acudiente(request, pk):
-    usuario = get_object_or_404(Usuario, pk=pk)
-    form    = AcudienteForm(request.POST or None)
-    if form.is_valid():
-        perfil         = form.save(commit=False)
-        perfil.usuario = usuario
-        perfil.save()
-        form.save_m2m()
-        messages.success(request, 'Perfil de acudiente creado.')
-        return redirect('usuarios:lista_usuarios')
-    return render(request, 'usuarios/form_perfil.html', {
-        'form':    form,
-        'titulo':  f'Perfil acudiente: {usuario.get_full_name()}',
-        'usuario': usuario,
-    })
-
-
-@login_required
-@solo_coordinador
-def toggle_usuario(request, pk):
-    usuario = get_object_or_404(Usuario, pk=pk)
-
-    if usuario.is_superuser:
-        messages.error(request, 'No puedes desactivar al superusuario.')
-        return redirect('usuarios:lista_usuarios')
-
-    if usuario == request.user:
-        messages.error(request, 'No puedes desactivarte a ti mismo.')
-        return redirect('usuarios:lista_usuarios')
-
-    if request.method == 'POST':
-        usuario.is_active = not usuario.is_active
-        usuario.save()
-        estado = 'activado' if usuario.is_active else 'desactivado'
-        messages.success(request, f'Usuario {usuario.get_full_name()} {estado} correctamente.')
-
-    return redirect('usuarios:lista_usuarios')
 
 
 @login_required
@@ -443,90 +619,86 @@ def editar_usuario(request, pk):
     })
 
 
-# ─────────────────────────────────────────
-# REGISTRO PÚBLICO
-# ─────────────────────────────────────────
+@login_required
+@solo_coordinador
+def toggle_usuario(request, pk):
+    usuario = get_object_or_404(Usuario, pk=pk)
 
-def registro_view(request):
-    return render(request, 'usuarios/registro.html')
+    if usuario.is_superuser:
+        messages.error(request, 'No puedes desactivar al superusuario.')
+        return redirect('usuarios:lista_usuarios')
 
-
-def registro_estudiante_view(request):
-    if request.user.is_authenticated:
-        return redirect('usuarios:dashboard')
-
-    usuario_form = UsuarioForm(request.POST or None)
-
-    if request.method == 'GET':
-        usuario_form.fields['rol'].initial  = Usuario.Rol.ESTUDIANTE
-        usuario_form.fields['rol'].disabled = True
-
-    form_est = EstudianteForm(request.POST or None)
+    if usuario == request.user:
+        messages.error(request, 'No puedes desactivarte a ti mismo.')
+        return redirect('usuarios:lista_usuarios')
 
     if request.method == 'POST':
-        usuario_form = UsuarioForm(request.POST)
-        usuario_form.fields['rol'].required = False
-        form_est = EstudianteForm(request.POST)
-
-        if usuario_form.is_valid() and form_est.is_valid():
-            usuario           = usuario_form.save(commit=False)
-            usuario.rol       = Usuario.Rol.ESTUDIANTE
+        if usuario.is_active:
             usuario.is_active = False
+            usuario.estado    = Usuario.Estado.SUSPENDIDO
             usuario.save()
+            messages.success(request, f'{usuario.get_full_name()} suspendido.')
+        else:
+            usuario.is_active = True
+            usuario.estado    = Usuario.Estado.ACTIVO
+            usuario.save()
+            messages.success(request, f'{usuario.get_full_name()} activado.')
 
-            perfil         = form_est.save(commit=False)
-            perfil.usuario = usuario
-            perfil.save()
+    return redirect('usuarios:lista_usuarios')
 
-            messages.success(
-                request,
-                'Cuenta creada correctamente. Espera a que el coordinador active tu cuenta.'
-            )
-            return redirect('usuarios:login')
 
-    return render(request, 'usuarios/registro_estudiante.html', {
-        'usuario_form': usuario_form,
-        'form_est':     form_est,
+@login_required
+@solo_coordinador
+def crear_perfil_estudiante(request, pk):
+    usuario = get_object_or_404(Usuario, pk=pk)
+    form    = EstudianteForm(request.POST or None)
+    if form.is_valid():
+        perfil         = form.save(commit=False)
+        perfil.usuario = usuario
+        perfil.save()
+        messages.success(request, 'Perfil de estudiante creado.')
+        return redirect('usuarios:lista_usuarios')
+    return render(request, 'usuarios/form_perfil.html', {
+        'form':    form,
+        'titulo':  f'Perfil estudiante: {usuario.get_full_name()}',
+        'usuario': usuario,
     })
 
 
-def registro_acudiente_view(request):
-    if request.user.is_authenticated:
-        return redirect('usuarios:dashboard')
+@login_required
+@solo_coordinador
+def crear_perfil_profesor(request, pk):
+    usuario = get_object_or_404(Usuario, pk=pk)
+    form    = ProfesorForm(request.POST or None)
+    if form.is_valid():
+        perfil         = form.save(commit=False)
+        perfil.usuario = usuario
+        perfil.save()
+        messages.success(request, 'Perfil de profesor creado.')
+        return redirect('usuarios:lista_usuarios')
+    return render(request, 'usuarios/form_perfil.html', {
+        'form':    form,
+        'titulo':  f'Perfil profesor: {usuario.get_full_name()}',
+        'usuario': usuario,
+    })
 
-    usuario_form = UsuarioForm(request.POST or None)
 
-    if request.method == 'GET':
-        usuario_form.fields['rol'].initial  = Usuario.Rol.ACUDIENTE
-        usuario_form.fields['rol'].disabled = True
-
-    form_acu = AcudienteForm(request.POST or None)
-
-    if request.method == 'POST':
-        usuario_form = UsuarioForm(request.POST)
-        usuario_form.fields['rol'].required = False
-        form_acu = AcudienteForm(request.POST)
-
-        if usuario_form.is_valid() and form_acu.is_valid():
-            usuario           = usuario_form.save(commit=False)
-            usuario.rol       = Usuario.Rol.ACUDIENTE
-            usuario.is_active = False
-            usuario.save()
-
-            perfil         = form_acu.save(commit=False)
-            perfil.usuario = usuario
-            perfil.save()
-            form_acu.save_m2m()
-
-            messages.success(
-                request,
-                'Cuenta creada correctamente. Espera a que el coordinador active tu cuenta.'
-            )
-            return redirect('usuarios:login')
-
-    return render(request, 'usuarios/registro_acudiente.html', {
-        'usuario_form': usuario_form,
-        'form_acu':     form_acu,
+@login_required
+@solo_coordinador
+def crear_perfil_acudiente(request, pk):
+    usuario = get_object_or_404(Usuario, pk=pk)
+    form    = AcudienteForm(request.POST or None)
+    if form.is_valid():
+        perfil         = form.save(commit=False)
+        perfil.usuario = usuario
+        perfil.save()
+        form.save_m2m()
+        messages.success(request, 'Perfil de acudiente creado.')
+        return redirect('usuarios:lista_usuarios')
+    return render(request, 'usuarios/form_perfil.html', {
+        'form':    form,
+        'titulo':  f'Perfil acudiente: {usuario.get_full_name()}',
+        'usuario': usuario,
     })
 
 

@@ -3,85 +3,338 @@
 {% block page_title %}Reporte de estudiante{% endblock %}
 
 {% block contenido %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0">
-        <i class="bi bi-person-lines-fill me-2"></i>
-        {{ estudiante.usuario.get_full_name }}
-    </h3>
-    <a href="{% url 'academico:reporte_notas' %}" class="btn btn-outline-secondary">
+
+<style>
+    /* Encabezado */
+    .reports-header {
+        background: linear-gradient(135deg, #1a237e 0%, #283593 60%, #1565c0 100%);
+        border-radius: 16px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(26,35,126,0.22);
+    }
+    .reports-header::before {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 200px; height: 200px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.06);
+        pointer-events: none;
+    }
+    .reports-header .header-label {
+        font-size: 0.72rem;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: #90caf9;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .reports-header h2 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #fff;
+        margin: 0 0 4px;
+        letter-spacing: -0.5px;
+    }
+    .reports-header .subtitle {
+        color: rgba(255,255,255,0.6);
+        font-size: 0.88rem;
+        margin: 0;
+    }
+    .btn-back {
+        background: rgba(255,255,255,0.15);
+        border: 1.5px solid rgba(255,255,255,0.3);
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.84rem;
+        font-weight: 600;
+        padding: 8px 16px;
+        text-decoration: none;
+        transition: background 0.15s;
+        white-space: nowrap;
+    }
+    .btn-back:hover { background: rgba(255,255,255,0.25); color: #fff; }
+
+    /* Tarjetas resumen */
+    .stat-card {
+        background: #fff;
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(26,35,126,0.07);
+        padding: 20px 22px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 100%;
+    }
+    .stat-card-icon {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .stat-card-icon i { font-size: 1.35rem; }
+    .stat-card-label {
+        font-size: 0.75rem;
+        color: #90a4ae;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .stat-card-value {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #1a237e;
+        line-height: 1;
+    }
+    .stat-card-value.ok   { color: #2e7d32; }
+    .stat-card-value.fail { color: #c62828; }
+
+    /* Estado badge inline */
+    .estado-badge {
+        font-size: 0.76rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 5px 13px;
+        letter-spacing: 0.3px;
+    }
+    .estado-excelente { background: #e8f5e9; color: #2e7d32; }
+    .estado-bueno     { background: #e3f2fd; color: #1565c0; }
+    .estado-aprobado  { background: #fff8e1; color: #f57f17; }
+    .estado-riesgo    { background: #ffebee; color: #c62828; }
+    .estado-sin       { background: #eceff1; color: #607d8b; }
+
+    /* Sección label */
+    .section-label {
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: #9fa8da;
+        font-weight: 700;
+        margin-bottom: 14px;
+    }
+
+    /* Tarjeta de materia */
+    .materia-card {
+        background: #fff;
+        border-radius: 14px;
+        border: none;
+        box-shadow: 0 2px 12px rgba(26,35,126,0.07);
+        overflow: hidden;
+        margin-bottom: 16px;
+        transition: box-shadow 0.18s;
+    }
+    .materia-card:hover { box-shadow: 0 6px 24px rgba(26,35,126,0.12); }
+    .materia-card-header {
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #f0f2f5;
+        background: #fafbff;
+    }
+    .materia-nombre {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #1a237e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .materia-nombre .mat-icon {
+        width: 30px; height: 30px;
+        border-radius: 8px;
+        background: #e8eaf6;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .materia-nombre .mat-icon i { font-size: 0.85rem; color: #1a237e; }
+    .materia-badges { display: flex; gap: 8px; align-items: center; }
+    .prom-badge {
+        font-size: 0.76rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 4px 12px;
+    }
+    .prom-badge.ok   { background: #e8f5e9; color: #2e7d32; }
+    .prom-badge.fail { background: #ffebee; color: #c62828; }
+    .asist-badge {
+        font-size: 0.76rem;
+        font-weight: 700;
+        border-radius: 20px;
+        padding: 4px 12px;
+        background: #e8eaf6;
+        color: #1a237e;
+    }
+
+    /* Tabla de notas */
+    .table { margin: 0; }
+    .table thead th {
+        background: #fff;
+        border-bottom: 1.5px solid #f0f2f5;
+        font-size: 0.73rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #90a4ae;
+        padding: 10px 20px;
+    }
+    .table tbody td {
+        padding: 11px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f5f6fa;
+        font-size: 0.875rem;
+        color: #37474f;
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .table tbody tr:hover td { background: #fafbff; }
+
+    .nota-pill {
+        display: inline-block;
+        font-size: 0.88rem;
+        font-weight: 800;
+        padding: 3px 14px;
+        border-radius: 20px;
+    }
+    .nota-pill.ok   { background: #e8f5e9; color: #2e7d32; }
+    .nota-pill.fail { background: #ffebee; color: #c62828; }
+
+    .periodo-tag {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #546e7a;
+        background: #eceff1;
+        border-radius: 6px;
+        padding: 3px 10px;
+    }
+
+    /* Empty */
+    .empty-state {
+        padding: 48px 24px;
+        text-align: center;
+        color: #90a4ae;
+    }
+    .empty-state i { font-size: 2.2rem; display: block; margin-bottom: 10px; color: #c5cae9; }
+    .empty-state p { font-size: 0.88rem; margin: 0; }
+</style>
+
+<!-- ENCABEZADO -->
+<div class="reports-header d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+        <div class="header-label">Reporte individual</div>
+        <h2><i class="bi bi-person-lines-fill me-2"></i>{{ estudiante.usuario.get_full_name }}</h2>
+        <p class="subtitle">Detalle académico completo por materia y periodo</p>
+    </div>
+    <a href="{% url 'academico:reporte_notas' %}" class="btn-back">
         <i class="bi bi-arrow-left me-1"></i>Volver
     </a>
 </div>
 
-<!-- Resumen general -->
+<!-- TARJETAS RESUMEN -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm text-center p-3">
-            <div class="text-muted small">Curso</div>
-            <div class="fw-bold">{{ estudiante.curso }}</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm text-center p-3">
-            <div class="text-muted small">Código</div>
-            <div class="fw-bold"><code>{{ estudiante.codigo_estudiantil }}</code></div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm text-center p-3">
-            <div class="text-muted small">Promedio general</div>
-            <div class="fw-bold fs-4
-        {% if promedio_general %}
-          {% if promedio_general >= 3.0 %}text-success{% else %}text-danger{% endif %}
-        {% endif %}">
-                {% if promedio_general %}{{ promedio_general }}{% else %}—{% endif %}
+        <div class="stat-card">
+            <div class="stat-card-icon" style="background:#e8eaf6;">
+                <i class="bi bi-grid-3x3-gap" style="color:#1a237e;"></i>
+            </div>
+            <div>
+                <div class="stat-card-label">Curso</div>
+                <div class="stat-card-value" style="font-size:1rem;">{{ estudiante.curso }}</div>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm text-center p-3">
-            <div class="text-muted small">Estado</div>
-            <div class="fw-bold">
-                {% if promedio_general %}
-                {% if promedio_general >= 4.5 %}
-                <span class="badge bg-success">Excelente</span>
-                {% elif promedio_general >= 3.5 %}
-                <span class="badge bg-primary">Bueno</span>
-                {% elif promedio_general >= 3.0 %}
-                <span class="badge bg-warning text-dark">Aprobado</span>
+        <div class="stat-card">
+            <div class="stat-card-icon" style="background:#e3f2fd;">
+                <i class="bi bi-hash" style="color:#1565c0;"></i>
+            </div>
+            <div>
+                <div class="stat-card-label">Código</div>
+                <div class="stat-card-value" style="font-size:1rem; font-family:monospace;">
+                    {{ estudiante.codigo_estudiantil|default:"—" }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            {% if promedio_general %}
+                {% if promedio_general >= 3.0 %}
+                <div class="stat-card-icon" style="background:#e8f5e9;">
+                    <i class="bi bi-trophy-fill" style="color:#2e7d32;"></i>
+                </div>
                 {% else %}
-                <span class="badge bg-danger">En riesgo</span>
+                <div class="stat-card-icon" style="background:#ffebee;">
+                    <i class="bi bi-trophy-fill" style="color:#c62828;"></i>
+                </div>
                 {% endif %}
-                {% else %}
-                <span class="badge bg-secondary">Sin notas</span>
-                {% endif %}
+            {% else %}
+            <div class="stat-card-icon" style="background:#eceff1;">
+                <i class="bi bi-trophy-fill" style="color:#90a4ae;"></i>
+            </div>
+            {% endif %}
+            <div>
+                <div class="stat-card-label">Promedio general</div>
+                <div class="stat-card-value {% if promedio_general %}{% if promedio_general >= 3.0 %}ok{% else %}fail{% endif %}{% endif %}">
+                    {% if promedio_general %}{{ promedio_general }}{% else %}—{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-icon" style="background:#f3e5f5;">
+                <i class="bi bi-patch-check-fill" style="color:#6a1b9a;"></i>
+            </div>
+            <div>
+                <div class="stat-card-label">Estado académico</div>
+                <div style="margin-top:4px;">
+                    {% if promedio_general %}
+                        {% if promedio_general >= 4.5 %}
+                        <span class="estado-badge estado-excelente">Excelente</span>
+                        {% elif promedio_general >= 3.5 %}
+                        <span class="estado-badge estado-bueno">Bueno</span>
+                        {% elif promedio_general >= 3.0 %}
+                        <span class="estado-badge estado-aprobado">Aprobado</span>
+                        {% else %}
+                        <span class="estado-badge estado-riesgo">En riesgo</span>
+                        {% endif %}
+                    {% else %}
+                    <span class="estado-badge estado-sin">Sin notas</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Detalle por materia -->
+<!-- DETALLE POR MATERIA -->
+<div class="section-label"><i class="bi bi-book me-1"></i>Detalle por materia</div>
+
 {% for m in materias_data %}
-<div class="card border-0 shadow-sm mb-3">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <span class="fw-semibold">
-            <i class="bi bi-book me-2"></i>{{ m.asignacion.materia.nombre }}
-        </span>
-        <div class="d-flex gap-2">
+<div class="materia-card">
+    <div class="materia-card-header">
+        <div class="materia-nombre">
+            <span class="mat-icon"><i class="bi bi-book"></i></span>
+            {{ m.asignacion.materia.nombre }}
+        </div>
+        <div class="materia-badges">
             {% if m.promedio %}
-            <span class="badge
-          {% if m.promedio >= 3.0 %}bg-success{% else %}bg-danger{% endif %}">
-                Prom: {{ m.promedio }}
+            <span class="prom-badge {% if m.promedio >= 3.0 %}ok{% else %}fail{% endif %}">
+                <i class="bi bi-star-fill me-1"></i>{{ m.promedio }}
             </span>
             {% endif %}
-            <span class="badge bg-secondary">
-                Asistencia: {{ m.pct_asistencia }}%
+            <span class="asist-badge">
+                <i class="bi bi-calendar-check me-1"></i>{{ m.pct_asistencia }}% asistencia
             </span>
         </div>
     </div>
-    <div class="card-body p-0">
-        <table class="table table-sm mb-0">
-            <thead class="table-light">
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
                 <tr>
                     <th>Periodo</th>
                     <th class="text-center">Nota</th>
@@ -91,20 +344,26 @@
             <tbody>
                 {% for nota in m.notas %}
                 <tr>
-                    <td>{{ nota.get_periodo_display }}</td>
-                    <td class="text-center fw-bold">{{ nota.valor }}</td>
+                    <td><span class="periodo-tag">{{ nota.get_periodo_display }}</span></td>
+                    <td class="text-center">
+                        <span class="nota-pill {% if nota.aprobado %}ok{% else %}fail{% endif %}">
+                            {{ nota.valor }}
+                        </span>
+                    </td>
                     <td>
                         {% if nota.aprobado %}
-                        <span class="badge bg-success">Aprobado</span>
+                        <span class="estado-badge estado-excelente" style="font-size:0.72rem;">Aprobado</span>
                         {% else %}
-                        <span class="badge bg-danger">Reprobado</span>
+                        <span class="estado-badge estado-riesgo" style="font-size:0.72rem;">Reprobado</span>
                         {% endif %}
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="3" class="text-muted text-center py-2">
-                        Sin notas registradas.
+                    <td colspan="3">
+                        <div class="empty-state" style="padding:24px;">
+                            <p>Sin notas registradas en esta materia.</p>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -113,8 +372,11 @@
     </div>
 </div>
 {% empty %}
-<div class="alert alert-info">
-    Este estudiante no tiene asignaciones en su curso aún.
+<div class="materia-card">
+    <div class="empty-state">
+        <i class="bi bi-inbox"></i>
+        <p>Este estudiante no tiene asignaciones en su curso aún.</p>
+    </div>
 </div>
 {% endfor %}
 
